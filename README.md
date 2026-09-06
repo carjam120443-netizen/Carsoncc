@@ -2,9 +2,9 @@
 
 **CarsonCC** is a from-scratch compiler for the **Carson programming language**.
 
-The project is being built from the ground up: CarsonCC has its own lexer, parser, AST, semantic checker, and x86-64 assembly backend. The host assembler/linker is used for native executables for now, while a real IR and more native toolchain work are on the roadmap.
+The compiler now has a working frontend, function parameters/calls, semantic validation, and an x86-64 backend. GitHub Actions automatically builds and tests the compiler on Linux and Windows, while version tags automatically produce Linux/Ubuntu and Windows release packages.
 
-> 🚧 **Status: early but functional.** The compiler can parse Carson source, check names, generate x86-64 assembly, and build a native executable.
+> 🚧 **Status: early but functional.** CarsonCC can parse Carson source, validate names and function calls, generate x86-64 assembly, and build native executables on its supported host toolchain.
 
 ## ⚡ Quick Start
 
@@ -36,14 +36,14 @@ Carson source (.car)
         ↓
  Semantic Analysis
         ↓
-      Carson IR
+   x86-64 Codegen
         ↓
-   Target Backend
+ Host assembler/linker
         ↓
- Native OS package
+ Native executable
 ```
 
-The IR stage is being introduced as the next major compiler architecture step.
+The IR layer is the next major compiler architecture step.
 
 ## 🟢 Current Features
 
@@ -53,24 +53,17 @@ The IR stage is being introduced as the next major compiler architecture step.
 - ➕ `+`, `-`, `*`, `/` precedence
 - 📦 `let` declarations
 - 🔎 Undefined-variable and duplicate-name diagnostics
+- 🧬 Function declarations with parameters
+- 📞 Function calls with argument validation
+- 🧠 Function symbol table and call-arity checking
 - ↩️ `return` statements
 - 🏗️ x86-64 Intel-syntax backend
 - 🔗 Native executable generation through the host toolchain
-- 🧪 End-to-end Makefile test
-- 🧱 Function-parameter and function-call syntax is being added to the compiler frontend
+- 🧪 Automated end-to-end tests
+- 🤖 GitHub Actions CI on pushes, pull requests, and manual dispatch
+- 📦 Automatic release packages from `v*` tags
 
 ## 📝 Carson Syntax
-
-```carson
-fn main() {
-    let answer = 10 + 20 * 2;
-    return answer;
-}
-```
-
-The expression evaluates to `50`.
-
-The planned function-call syntax is:
 
 ```carson
 fn add(a, b) {
@@ -82,30 +75,72 @@ fn main() {
 }
 ```
 
+The function-call test produces an exit status of `42`.
+
 ## 📦 OS App Release Packages
 
-CarsonCC now has a dedicated `osappreleasepackages/` tree for future distributable compiler packages and terminal integrations. This keeps generated OS packages separate from the compiler source.
+CarsonCC has a dedicated `osappreleasepackages/` tree for distributable compiler packages and terminal integrations. Generated release files stay separate from the compiler source.
 
 ```text
 osappreleasepackages/
-├── windows/     # Windows executables, ZIP/installer releases, terminal tools
-├── ubuntu/      # .deb packages, APT metadata, Ubuntu terminal integration
-├── linux/       # Distro-neutral Linux archives and portable builds
-└── terminals/   # Cross-platform shell/terminal integration
+├── windows/     # Windows compiler packages and future terminal tools
+├── ubuntu/      # Ubuntu/Debian .deb packages and APT metadata
+├── linux/       # Distro-neutral Linux archives
+└── terminals/   # Cross-platform shell/terminal integrations
 ```
 
-Future GitHub Actions can build these directories from tagged CarsonCC releases. Additional distro-specific directories can be added later without changing the compiler's `src/` layout.
+The release workflow currently produces:
+
+- 🐧 Linux x86-64 `.tar.gz`
+- 🟠 Ubuntu/Debian x86-64 `.deb`
+- 🪟 Windows x86-64 `.zip`
+- 📦 Source `.tar.gz`
+
+## 🤖 Automatic GitHub Actions
+
+Workflows live under `.github/workflows/`.
+
+### CI
+
+Every push to `main`, pull request targeting `main`, or manual CI dispatch runs the compiler build and tests. Linux also tests assembly generation and a multi-function call.
+
+### Releases
+
+Push a version tag such as:
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+The release workflow automatically:
+
+1. Builds CarsonCC on Ubuntu.
+2. Runs the compiler tests.
+3. Creates an Ubuntu/Debian `.deb` package.
+4. Creates a Linux x86-64 archive.
+5. Builds the Windows compiler with MSVC.
+6. Creates a Windows x86-64 ZIP package.
+7. Creates a source archive.
+8. Publishes a GitHub Release containing the generated files.
+
+No manual package assembly is required.
 
 ## 📁 Project Layout
 
 ```text
 Carsoncc/
+├── .github/
+│   └── workflows/
+│       ├── ci.yml
+│       └── release.yml
 ├── src/
 │   ├── main.c
 │   ├── lexer.c/.h
 │   ├── parser.c/.h
 │   ├── ast.c/.h
 │   ├── semantic.c/.h
+│   ├── semantic_full.c  # complete function/call validation
 │   ├── ir.c/.h
 │   └── codegen.c/.h
 ├── examples/
@@ -125,7 +160,7 @@ Carsoncc/
 carsoncc <input.car> [-o output] [-S]
 ```
 
-- `-S` — generate assembly and stop before linking.
+- `-S` — generate x86-64 assembly and stop before linking.
 - `-o FILE` — choose the output executable or assembly filename.
 
 ## 🔧 Building
@@ -147,13 +182,13 @@ make clean
 - [x] Recursive-descent parser
 - [x] Arithmetic
 - [x] Variables
-- [x] Basic semantic analysis
+- [x] Semantic analysis
 
 ### Phase 2 — Functions & Language 🚧
 - [x] Function parameter syntax
 - [x] Function-call syntax
-- [ ] Full semantic checking for calls and parameters
-- [ ] Reliable multi-function code generation tests
+- [x] Function/call semantic checking
+- [x] Multi-function x86-64 code generation
 - [ ] Assignment expressions
 - [ ] Booleans and comparisons
 - [ ] `if` / `else`
@@ -178,13 +213,18 @@ make clean
 - [ ] Register allocation
 - [ ] Optimization levels
 - [ ] Debug information
+- [ ] Native Windows x86-64 codegen
 
 ### Phase 5 — OS Distribution 📦
-- [ ] Windows x86-64 release packages
-- [ ] Ubuntu/Debian `.deb` packages
-- [ ] Generic Linux portable packages
+- [x] Automated Linux CI
+- [x] Automated Windows compiler build
+- [x] Ubuntu/Debian `.deb` packaging
+- [x] Generic Linux portable packaging
+- [x] Windows ZIP packaging
+- [x] Automatic GitHub Releases from version tags
+- [ ] APT repository
+- [ ] Windows installer
 - [ ] Terminal integrations
-- [ ] Automated GitHub Actions release builds
 - [ ] Cross-compilation
 - [ ] Beta OS target
 - [ ] Self-hosting CarsonCC
