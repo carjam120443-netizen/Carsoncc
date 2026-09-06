@@ -52,7 +52,7 @@ int main(int argc,char **argv){
     if(windows_target){
         char obj_path[512];
         snprintf(obj_path,sizeof(obj_path),"%s.carsoncc.obj",output);
-        snprintf(command,sizeof(command),"ml64 /c /Fo\"%s\" \"%s\" && if not exist \"%s\" exit /b 1 && cl /nologo \"%s\" /Fe:\"%s\"",obj_path,asm_path,obj_path,obj_path,output);
+        snprintf(command,sizeof(command),"ml64 /c /Fo\"%s\" \"%s\" && if not exist \"%s\" exit /b 1 && link /nologo /SUBSYSTEM:CONSOLE /ENTRY:main /OUT:\"%s\" \"%s\" && if not exist \"%s\" exit /b 1",obj_path,asm_path,obj_path,output,obj_path,output);
         rc=system(command);
         remove(obj_path);
     }else{
