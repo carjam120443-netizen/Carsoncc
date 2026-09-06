@@ -1,10 +1,30 @@
 # CarsonCC 🦅
 
-**CarsonCC** is a from-scratch compiler project for the **Carson programming language**.
+**CarsonCC** is a from-scratch compiler for the **Carson programming language**.
 
-The goal is to build a real, understandable compiler instead of wrapping an existing compiler. CarsonCC is being developed in stages, starting with a small C implementation and growing toward native **x86-64** code generation and eventually self-hosting.
+The project is intentionally being built from the ground up: CarsonCC has its own lexer, parser, AST, semantic checker, and x86-64 assembly backend. The system linker/assembler is used for the final native executable for now; replacing more of the toolchain is part of the roadmap.
 
-> 🚧 **Early development:** the compiler pipeline is being built piece by piece. APIs and language syntax may change.
+> 🚧 **Status: early but actually functional.** CarsonCC can parse a small Carson program, perform basic semantic checks, generate x86-64 assembly, and build a native executable.
+
+## ⚡ Quick Start
+
+```bash
+make
+make test
+```
+
+Compile a Carson program:
+
+```bash
+./carsoncc examples/hello.car -o hello
+./hello
+```
+
+Generate assembly instead:
+
+```bash
+./carsoncc examples/hello.car -S -o hello.s
+```
 
 ## 🧠 Compiler Pipeline
 
@@ -12,7 +32,7 @@ The goal is to build a real, understandable compiler instead of wrapping an exis
 Carson source (.car)
         │
         ▼
-     Lexer
+      Lexer
         │
         ▼
      Tokens
@@ -21,184 +41,219 @@ Carson source (.car)
      Parser
         │
         ▼
-      AST
+       AST
         │
         ▼
-Semantic Analysis
+ Semantic Analysis
         │
         ▼
-   Carson IR
+ x86-64 Code Generator
         │
         ▼
-   Optimizations
-        │
-        ▼
- x86-64 Codegen
-        │
-        ▼
- Assembly / Object
+   GNU/LLVM toolchain
         │
         ▼
  Native Executable
 ```
 
-## ✨ Current Foundation
+The IR layer is reserved for the next major compiler stage.
 
-The repository now contains the initial pieces of the compiler architecture:
+## 🟢 What Works Now
 
-- 🖥️ C compiler driver entry point
-- 🔤 Lexer/token definitions
-- 🌳 Abstract Syntax Tree foundation
-- 🧩 Parser interface and implementation stub
-- 🔎 Semantic-analysis interface and stub
-- ⚙️ Intermediate Representation interface and stub
-- 🏗️ x86-64 code-generation interface and stub
-- 📦 Makefile-based build system
-- 🧪 First `.car` language example
+- 🔤 Real tokenizer with keywords, identifiers, integers, operators, punctuation, comments, and strings
+- 🌳 AST construction
+- 🧩 Recursive-descent parser
+- ➕ Operator precedence for `+`, `-`, `*`, and `/`
+- 📦 `let` declarations
+- 🔎 Basic semantic checking and undefined-variable diagnostics
+- ↩️ `return` statements
+- 🏗️ x86-64 Intel-syntax assembly generation
+- 🔗 Native executable generation through the host toolchain
+- 🧪 Executable build test in the Makefile
+- 📄 Source line diagnostics
 
-These components are intentionally small right now. Each stage will become functional as development continues.
+## 📝 Carson Syntax
+
+A currently supported Carson program:
+
+```carson
+fn main() {
+    let answer = 10 + 20 * 2;
+    return answer;
+}
+```
+
+The expression evaluates to `50`, so the resulting program exits with status `50`.
+
+Variables can be used in later expressions:
+
+```carson
+fn main() {
+    let a = 8;
+    let b = 4;
+    return a * b + 2;
+}
+```
+
+Comments use `//`:
+
+```carson
+// Carson comment
+fn main() {
+    return 42;
+}
+```
 
 ## 📁 Project Layout
 
 ```text
 Carsoncc/
 ├── src/
-│   ├── main.c
-│   ├── lexer.c
-│   ├── lexer.h
-│   ├── parser.c
-│   ├── parser.h
-│   ├── ast.c
-│   ├── ast.h
-│   ├── semantic.c
-│   ├── semantic.h
-│   ├── ir.c
-│   ├── ir.h
-│   ├── codegen.c
-│   └── codegen.h
+│   ├── main.c       # Compiler CLI and driver
+│   ├── lexer.c/.h   # Source → tokens
+│   ├── parser.c/.h  # Tokens → AST
+│   ├── ast.c/.h     # AST data structures
+│   ├── semantic.c/.h# Name checking
+│   ├── ir.c/.h      # Planned intermediate representation
+│   └── codegen.c/.h # AST → x86-64 assembly
 ├── examples/
 │   └── hello.car
 ├── Makefile
 └── README.md
 ```
 
-## 📝 Carson Language
+## 🛠️ Command Line
 
-The language is designed to stay readable while giving the compiler room to grow.
-
-A very early example looks like:
-
-```carson
-fn main() {
-    let message = "Hello from CarsonCC!";
-    return 0;
-}
+```text
+carsoncc <input.car> [-o output] [-S]
 ```
 
-Planned language features include:
+### `-S`
 
-- Variables and constants
-- Integer and string values
-- Arithmetic expressions
-- Functions
-- Return values
-- Conditionals
-- Loops
-- User-defined types
-- Modules/imports
-- A standard library
-- Memory-management features
-- A stable compiler command-line interface
+Generate x86-64 assembly and stop before linking.
 
-## 🔨 Building
+### `-o FILE`
 
-You need a C11-compatible compiler such as GCC, Clang, or another compatible implementation.
+Choose the output filename. Without `-o`, the compiler creates `a.out`.
+
+## 🔧 Building From Source
+
+CarsonCC is written in portable C11 and currently needs a C compiler plus the host assembler/linker toolchain.
 
 ```bash
 make
 ```
 
-Run the current compiler driver against the example:
+Run the end-to-end test:
 
 ```bash
 make test
 ```
 
-Or directly:
+Clean build artifacts:
 
 ```bash
-./carsoncc examples/hello.car
+make clean
 ```
 
-At this stage the executable is the compiler driver and scaffolding; native Carson compilation is still being implemented.
+## 🧪 Compiler Development
 
-## 🎯 Roadmap
-
-### Phase 1 — Foundation
-
-- [x] Repository structure
-- [x] Compiler driver
-- [x] Token definitions
-- [x] AST foundation
-- [x] Build system
-- [ ] Functional lexer
-
-### Phase 2 — Frontend
-
-- [ ] Complete lexer
-- [ ] Expression parser
-- [ ] Statement parser
-- [ ] Function parser
-- [ ] AST construction
-- [ ] Diagnostics and source locations
-
-### Phase 3 — Semantic Analysis
-
-- [ ] Symbol tables
-- [ ] Name resolution
-- [ ] Type checking
-- [ ] Function checking
-- [ ] Useful compiler errors
-
-### Phase 4 — Backend
-
-- [ ] Carson IR
-- [ ] IR lowering
-- [ ] Basic optimizations
-- [ ] x86-64 instruction generation
-- [ ] Assembly output
-- [ ] Object/executable generation
-
-### Phase 5 — Beyond
-
-- [ ] Standard library
-- [ ] Better optimization
-- [ ] Debug information
-- [ ] Cross-compilation support
-- [ ] Beta OS target support
-- [ ] Self-hosted CarsonCC
-
-## 🧪 Development Philosophy
-
-CarsonCC is intended to be **small, hackable, and understandable**. Compiler stages should remain separated so the project can eventually support additional architectures and tools without rewriting the entire compiler.
-
-The long-term idea is simple:
+The compiler is intentionally developed in layers:
 
 ```text
-Write Carson
-    ↓
-Compile with CarsonCC
-    ↓
-Get native machine code
-    ↓
-Run it anywhere CarsonCC supports
+Lexer → Parser → AST → Semantic Analysis → IR → Backend
 ```
 
-## 🛠️ Project Status
+Each stage should have a clear interface and be testable independently. This makes it easier to add language features without turning the compiler into one giant source file.
 
-**Experimental / pre-alpha** 🚧
+## 🗺️ Roadmap
 
-The architecture is being established now. The first major milestone is turning the lexer into a real tokenizer, followed by a working parser and AST pipeline.
+### Phase 1 — Working Frontend ✅
+
+- [x] Compiler driver
+- [x] Token definitions
+- [x] Functional lexer
+- [x] AST
+- [x] Recursive-descent parser
+- [x] Arithmetic expressions
+- [x] Variables
+- [x] Basic semantic analysis
+
+### Phase 2 — Better Language Support 🚧
+
+- [ ] Assignment expressions
+- [ ] Boolean values
+- [ ] Comparisons
+- [ ] `if` / `else`
+- [ ] `while` / `for`
+- [ ] Function parameters
+- [ ] Function calls
+- [ ] Strings and runtime support
+- [ ] Better diagnostics
+
+### Phase 3 — Real IR ⚙️
+
+- [ ] Three-address Carson IR
+- [ ] Basic blocks
+- [ ] Control-flow graph
+- [ ] AST → IR lowering
+- [ ] IR verifier
+- [ ] Constant folding
+- [ ] Dead-code elimination
+
+### Phase 4 — Native Toolchain 🔥
+
+- [x] x86-64 assembly backend foundation
+- [x] Native executable generation
+- [ ] Direct ELF object generation
+- [ ] Carson runtime
+- [ ] Register allocation
+- [ ] Multiple optimization levels
+- [ ] Debug information
+
+### Phase 5 — CarsonCC Gets Serious 🦅
+
+- [ ] Standard library
+- [ ] Modules/imports
+- [ ] User-defined types
+- [ ] Arrays and pointers
+- [ ] Cross-compilation
+- [ ] Windows x86-64 backend
+- [ ] Beta OS target
+- [ ] Self-hosting CarsonCC
+
+## 🎯 Long-Term Goal
+
+The end goal is a compiler that can eventually compile itself:
+
+```text
+        CarsonCC
+           │
+           ▼
+     Carson language
+           │
+           ▼
+      CarsonCC again
+           │
+           ▼
+     Native compiler
+```
+
+And eventually:
+
+```text
+Carson source
+      ↓
+   CarsonCC
+      ↓
+ Carson IR
+      ↓
+ x86-64 / other targets
+      ↓
+ Native executable
+      ↓
+     Beta OS 🚀
+```
 
 ## 📜 License
 
