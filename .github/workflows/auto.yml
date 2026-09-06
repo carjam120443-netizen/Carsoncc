@@ -56,8 +56,9 @@ jobs:
         shell: cmd
         run: |
           carsoncc.exe examples\hello.car -target windows -o hello.exe
-          hello.exe
+          .\hello.exe
           if not "%ERRORLEVEL%"=="50" exit /b 1
+          exit /b 0
       - name: Test Windows assembly output
         shell: cmd
         run: |
