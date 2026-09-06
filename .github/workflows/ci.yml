@@ -45,8 +45,11 @@ jobs:
           }
           EOF
           ./carsoncc /tmp/functions.car -o /tmp/functions
+          set +e
           /tmp/functions
-          test "$?" -eq 42
+          rc=$?
+          set -e
+          test "$rc" -eq 42
 
       - name: Upload compiler binary
         uses: actions/upload-artifact@v4
