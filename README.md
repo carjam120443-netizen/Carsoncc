@@ -2,9 +2,9 @@
 
 **CarsonCC** is a from-scratch compiler for the **Carson programming language**.
 
-The compiler now has a working frontend, function parameters/calls, semantic validation, and an x86-64 backend. GitHub Actions automatically builds and tests the compiler on Linux and Windows, while version tags automatically produce Linux/Ubuntu and Windows release packages.
+CarsonCC has a working frontend, function parameters/calls, semantic validation, x86-64 code generation, and a native Windows x64 MASM backend. GitHub Actions automatically builds and tests the compiler on every branch push, pull request, and scheduled run.
 
-> 🚧 **Status: early but functional.** CarsonCC can parse Carson source, validate names and function calls, generate x86-64 assembly, and build native executables on its supported host toolchain.
+> 🚧 **Status: early but functional.** CarsonCC can parse Carson source, validate names and function calls, generate native assembly, and build executables on supported toolchains.
 
 ## ⚡ Quick Start
 
@@ -15,10 +15,22 @@ make test
 ./hello
 ```
 
-Generate assembly only:
+Generate host assembly only:
 
 ```bash
 ./carsoncc examples/hello.car -S -o hello.s
+```
+
+Generate native Windows x64 MASM assembly from any host:
+
+```bash
+./carsoncc examples/hello.car -target windows -S -o hello.asm
+```
+
+On a Windows machine with MSVC and MASM installed, CarsonCC can also build the Windows executable directly:
+
+```text
+carsoncc examples\hello.car -target windows -o hello.exe
 ```
 
 ## 🧠 Compiler Pipeline
@@ -36,10 +48,13 @@ Carson source (.car)
         ↓
  Semantic Analysis
         ↓
-   x86-64 Codegen
-        ↓
- Host assembler/linker
-        ↓
+   Target backend
+      ↙       ↘
+ System V     Windows x64
+ x86-64       MASM
+      ↓          ↓
+ Host toolchain / MSVC
+      ↓
  Native executable
 ```
 
@@ -57,10 +72,11 @@ The IR layer is the next major compiler architecture step.
 - 📞 Function calls with argument validation
 - 🧠 Function symbol table and call-arity checking
 - ↩️ `return` statements
-- 🏗️ x86-64 Intel-syntax backend
+- 🏗️ System V x86-64 Intel-syntax backend
+- 🪟 Native Windows x64 MASM backend using the Windows register calling convention
 - 🔗 Native executable generation through the host toolchain
 - 🧪 Automated end-to-end tests
-- 🤖 GitHub Actions CI on pushes, pull requests, and manual dispatch
+- 🤖 Always-on GitHub Actions automation
 - 📦 Automatic release packages from `v*` tags
 
 ## 📝 Carson Syntax
@@ -100,9 +116,21 @@ The release workflow currently produces:
 
 Workflows live under `.github/workflows/`.
 
+### Always-On Auto Build
+
+`auto.yml` runs automatically on:
+
+- every push to any branch
+- every pull request
+- every `v*` version tag
+- a daily scheduled build
+- manual `workflow_dispatch`
+
+It builds CarsonCC on both Ubuntu and Windows. The Windows job actually invokes the native Windows backend, builds `hello.exe`, and verifies its exit status. The Linux job also verifies that Windows MASM assembly can be emitted.
+
 ### CI
 
-Every push to `main`, pull request targeting `main`, or manual CI dispatch runs the compiler build and tests. Linux also tests assembly generation and a multi-function call.
+`ci.yml` provides the focused main-branch compiler tests, including multi-function calls and assembly generation.
 
 ### Releases
 
@@ -132,6 +160,7 @@ No manual package assembly is required.
 Carsoncc/
 ├── .github/
 │   └── workflows/
+│       ├── auto.yml
 │       ├── ci.yml
 │       └── release.yml
 ├── src/
@@ -142,7 +171,8 @@ Carsoncc/
 │   ├── semantic.c/.h
 │   ├── semantic_full.c  # complete function/call validation
 │   ├── ir.c/.h
-│   └── codegen.c/.h
+│   ├── codegen.c/.h
+│   └── codegen_windows.c # native Windows x64 MASM backend
 ├── examples/
 │   └── hello.car
 ├── osappreleasepackages/
@@ -157,15 +187,19 @@ Carsoncc/
 ## 🛠️ Command Line
 
 ```text
-carsoncc <input.car> [-o output] [-S]
+carsoncc <input.car> [-o output] [-S] [-target TARGET]
 ```
 
-- `-S` — generate x86-64 assembly and stop before linking.
+- `-S` — generate assembly and stop before linking.
 - `-o FILE` — choose the output executable or assembly filename.
+- `-target host` — use the System V x86-64 backend (default).
+- `-target windows` or `-target win64` — use the native Windows x64 MASM backend.
+
+The Windows backend currently supports up to four integer parameters/arguments, matching the four register argument positions of the Windows x64 ABI. Additional Windows ABI stack-argument support is planned.
 
 ## 🔧 Building
 
-CarsonCC is written in C11 and currently needs a C compiler plus the host assembler/linker toolchain.
+CarsonCC is written in C11 and currently needs a C compiler plus the appropriate host assembler/linker toolchain.
 
 ```bash
 make
@@ -208,16 +242,18 @@ make clean
 ### Phase 4 — Native Toolchain 🔥
 - [x] x86-64 assembly backend foundation
 - [x] Native executable generation
+- [x] Native Windows x86-64 codegen foundation
 - [ ] Direct ELF object generation
 - [ ] Carson runtime
 - [ ] Register allocation
 - [ ] Optimization levels
 - [ ] Debug information
-- [ ] Native Windows x86-64 codegen
+- [ ] Windows ABI stack arguments
 
 ### Phase 5 — OS Distribution 📦
 - [x] Automated Linux CI
 - [x] Automated Windows compiler build
+- [x] Always-on cross-platform auto build
 - [x] Ubuntu/Debian `.deb` packaging
 - [x] Generic Linux portable packaging
 - [x] Windows ZIP packaging
