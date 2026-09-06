@@ -1,7 +1,5 @@
 #ifndef CARSONCC_SEMANTIC_H
 #define CARSONCC_SEMANTIC_H
-
-/* Type checking and name resolution interface. */
-int semantic_check(void *ast);
-
+#include "ast.h"
+int semantic_check(const AstNode *ast);
 #endif
