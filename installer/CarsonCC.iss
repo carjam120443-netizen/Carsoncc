@@ -33,11 +33,11 @@ Name: "{autoprograms}\CarsonCC\Examples"; Filename: "{app}\examples"
 
 [Code]
 const
-  EnvironmentKey = 'Software\Environment';
-  EnvironmentValue = 'Path';
-  HWND_BROADCAST = $FFFF;
-  WM_SETTINGCHANGE = $001A;
-  SMTO_ABORTIFHUNG = $0002;
+  CarsonCCEnvironmentKey = 'Software\Environment';
+  CarsonCCEnvironmentValue = 'Path';
+  CarsonCCHwndBroadcast = $FFFF;
+  CarsonCCWmSettingChange = $001A;
+  CarsonCCSmtoAbortIfHung = $0002;
 
 procedure SendMessageTimeout(hWnd: Integer; Msg: Cardinal; wParam: Integer;
   lParam: string; fuFlags, uTimeout: Cardinal; var lpdwResult: Integer);
@@ -47,8 +47,8 @@ procedure BroadcastEnvironmentChange;
 var
   ResultCode: Integer;
 begin
-  SendMessageTimeout(HWND_BROADCAST, WM_SETTINGCHANGE, 0, 'Environment',
-    SMTO_ABORTIFHUNG, 5000, ResultCode);
+  SendMessageTimeout(CarsonCCHwndBroadcast, CarsonCCWmSettingChange, 0, 'Environment',
+    CarsonCCSmtoAbortIfHung, 5000, ResultCode);
 end;
 
 function NormalizePathPart(const S: string): string;
@@ -66,7 +66,7 @@ var
   OldPath, NewPath, AppPath: string;
 begin
   AppPath := NormalizePathPart(ExpandConstant('{app}'));
-  if RegQueryStringValue(HKEY_CURRENT_USER, EnvironmentKey, EnvironmentValue, OldPath) then
+  if RegQueryStringValue(HKEY_CURRENT_USER, CarsonCCEnvironmentKey, CarsonCCEnvironmentValue, OldPath) then
   begin
     if Pos(';' + AppPath + ';', ';' + OldPath + ';') > 0 then
       exit;
@@ -78,7 +78,7 @@ begin
   else
     NewPath := AppPath;
 
-  RegWriteExpandStringValue(HKEY_CURRENT_USER, EnvironmentKey, EnvironmentValue, NewPath);
+  RegWriteExpandStringValue(HKEY_CURRENT_USER, CarsonCCEnvironmentKey, CarsonCCEnvironmentValue, NewPath);
   BroadcastEnvironmentChange;
 end;
 
@@ -88,7 +88,7 @@ var
   P: Integer;
 begin
   AppPath := NormalizePathPart(ExpandConstant('{app}'));
-  if not RegQueryStringValue(HKEY_CURRENT_USER, EnvironmentKey, EnvironmentValue, OldPath) then
+  if not RegQueryStringValue(HKEY_CURRENT_USER, CarsonCCEnvironmentKey, CarsonCCEnvironmentValue, OldPath) then
     exit;
 
   NewPath := '';
@@ -115,7 +115,7 @@ begin
     end;
   end;
 
-  RegWriteExpandStringValue(HKEY_CURRENT_USER, EnvironmentKey, EnvironmentValue, NewPath);
+  RegWriteExpandStringValue(HKEY_CURRENT_USER, CarsonCCEnvironmentKey, CarsonCCEnvironmentValue, NewPath);
   BroadcastEnvironmentChange;
 end;
 
