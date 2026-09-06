@@ -71,13 +71,38 @@ jobs:
           path: carsoncc.exe
           if-no-files-found: error
 
+  android:
+    name: Automatic Android APK build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Build CarsonCC Mobile APK
+        run: gradle -p mobile assembleRelease -PCARSONCC_VERSION="0.1.${{ github.run_number }}" -PCARSONCC_VERSION_CODE="${{ github.run_number }}"
+      - name: Upload Android APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: carsoncc-auto-android-apk
+          path: mobile/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+
   auto-status:
     name: Automatic build status
     if: ${{ always() }}
-    needs: [linux, windows]
+    needs: [linux, windows, android]
     runs-on: ubuntu-latest
     steps:
       - name: Require all platform builds to pass
         run: |
           test "${{ needs.linux.result }}" = "success"
           test "${{ needs.windows.result }}" = "success"
+          test "${{ needs.android.result }}" = "success"
