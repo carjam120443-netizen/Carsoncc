@@ -25,6 +25,11 @@ jobs:
         run: make clean all
       - name: Run compiler tests
         run: make test
+      - name: Static analysis with Cppcheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cppcheck
+          cppcheck --enable=warning,style,performance,portability --error-exitcode=1 --inline-suppr src
       - name: Test assembly output
         run: |
           ./carsoncc examples/hello.car -S -o hello.s
@@ -92,14 +97,24 @@ jobs:
           gradle-version: '8.9'
       - name: Build Android APK
         run: gradle -p mobile clean assembleRelease "-PCARSONCC_VERSION=0.1.${{ github.run_number }}" "-PCARSONCC_VERSION_CODE=${{ github.run_number }}"
-      - name: Verify Android APK
+      - name: Run Android Lint
+        run: gradle -p mobile lintRelease --stacktrace
+      - name: Verify APK with apksigner
+        shell: bash
         run: |
           APK="$(find mobile/app/build/outputs/apk/release -maxdepth 1 -name '*.apk' -print -quit)"
           test -s "$APK"
-          echo "Built APK: $APK"
+          apksigner verify --verbose "$APK"
+          echo "Verified APK: $APK"
       - name: Upload Android APK
         uses: actions/upload-artifact@v4
         with:
           name: carsoncc-android-apk
           path: mobile/app/build/outputs/apk/release/*.apk
           if-no-files-found: error
+      - name: Upload Android lint report
+        uses: actions/upload-artifact@v4
+        with:
+          name: carsoncc-android-lint-report
+          path: mobile/app/build/reports/lint-results-release.html
+          if-no-files-found: warn
