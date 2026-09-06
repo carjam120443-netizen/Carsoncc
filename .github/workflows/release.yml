@@ -4,9 +4,19 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version, for example 0.1.0'
+        required: true
+        default: '0.1.0'
+        type: string
 
 permissions:
   contents: write
+
+env:
+  RELEASE_VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
 
 jobs:
   linux:
@@ -19,7 +29,7 @@ jobs:
         run: make clean all && make test
       - name: Build Debian package
         env:
-          VERSION: ${{ github.ref_name }}
+          VERSION: ${{ env.RELEASE_VERSION }}
         run: |
           VERSION="${VERSION#v}"
           PKG="carsoncc_${VERSION}_amd64"
@@ -42,7 +52,7 @@ jobs:
           mkdir -p dist/carsoncc-linux-x86_64
           cp carsoncc README.md dist/carsoncc-linux-x86_64/
           cp -r examples osappreleasepackages dist/carsoncc-linux-x86_64/
-          tar -C dist -czf "carsoncc-${{ github.ref_name }}-linux-x86_64.tar.gz" carsoncc-linux-x86_64
+          tar -C dist -czf "carsoncc-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.gz" carsoncc-linux-x86_64
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -77,23 +87,29 @@ jobs:
           Copy-Item README.md $dir
           Copy-Item -Recurse examples $dir
           Copy-Item -Recurse osappreleasepackages $dir
-          Compress-Archive -Path "$dir\*" -DestinationPath "carsoncc-${{ github.ref_name }}-windows-x86_64.zip" -Force
+          Compress-Archive -Path "$dir\*" -DestinationPath "carsoncc-${{ env.RELEASE_VERSION }}-windows-x86_64.zip" -Force
       - name: Install Inno Setup
         shell: pwsh
         run: choco install innosetup --yes --no-progress
       - name: Build Windows installer
         shell: pwsh
         env:
-          CARSONCC_VERSION: ${{ github.ref_name }}
+          CARSONCC_VERSION: ${{ env.RELEASE_VERSION }}
         run: |
           $env:CARSONCC_VERSION = $env:CARSONCC_VERSION.TrimStart('v')
-          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "installer\CarsonCC.iss"
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { $iscc = "${env:ProgramFiles}\Inno Setup 6\ISCC.exe" }
+          if (-not (Test-Path $iscc)) { throw "Inno Setup compiler not found" }
+          & $iscc "installer\CarsonCC.iss"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Get-ChildItem -Recurse dist
       - name: Upload Windows packages
         uses: actions/upload-artifact@v4
         with:
           name: carsoncc-windows-packages
           path: |
             *.zip
+            dist\*.exe
             installer\dist\*.exe
           if-no-files-found: error
 
@@ -105,7 +121,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Create source archive
         run: |
-          git archive --format=tar.gz --prefix="Carsoncc-${{ github.ref_name }}/" HEAD > "carsoncc-${{ github.ref_name }}-source.tar.gz"
+          git archive --format=tar.gz --prefix="Carsoncc-${{ env.RELEASE_VERSION }}/" HEAD > "carsoncc-${{ env.RELEASE_VERSION }}-source.tar.gz"
       - name: Upload source artifact
         uses: actions/upload-artifact@v4
         with:
@@ -132,10 +148,12 @@ jobs:
         with:
           name: carsoncc-source-package
           path: release
-      - name: Publish release
+      - name: Publish GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${{ github.ref_name }}" release/* \
-            --title "CarsonCC ${{ github.ref_name }}" \
-            --generate-notes
+          VERSION="${{ env.RELEASE_VERSION }}"
+          VERSION="${VERSION#v}"
+          TAG="v${VERSION}"
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "CarsonCC v${VERSION}" --generate-notes
+          gh release upload "$TAG" release/* --clobber
