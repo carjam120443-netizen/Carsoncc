@@ -12,7 +12,6 @@ src/%.o: src/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 test: $(TARGET)
 	./$(TARGET) examples/hello.car -o hello
-	./hello
-	rm -f hello
+	./hello; status=$$?; rm -f hello; test "$$status" -eq 50
 clean:
 	rm -f $(OBJECTS) $(TARGET) *.carsoncc.s
