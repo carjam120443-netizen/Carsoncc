@@ -1,0 +1,136 @@
+name: CarsonCC Release Packages
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  linux:
+    name: Build Linux and Ubuntu packages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build
+        run: make clean all && make test
+
+      - name: Build Debian package
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: |
+          VERSION="${VERSION#v}"
+          PKG="carsoncc_${VERSION}_amd64"
+          mkdir -p "$PKG/DEBIAN" "$PKG/usr/bin" "$PKG/usr/share/doc/carsoncc"
+          install -m 0755 carsoncc "$PKG/usr/bin/carsoncc"
+          install -m 0644 README.md "$PKG/usr/share/doc/carsoncc/README.md"
+          cat > "$PKG/DEBIAN/control" <<EOF
+          Package: carsoncc
+          Version: ${VERSION}
+          Section: devel
+          Priority: optional
+          Architecture: amd64
+          Maintainer: CarsonCC Project
+          Description: Carson programming language compiler
+           From-scratch Carson compiler with an x86-64 backend.
+          EOF
+          dpkg-deb --build "$PKG" "${PKG}.deb"
+
+      - name: Build Linux archive
+        run: |
+          mkdir -p dist/carsoncc-linux-x86_64
+          cp carsoncc README.md dist/carsoncc-linux-x86_64/
+          cp -r examples osappreleasepackages dist/carsoncc-linux-x86_64/
+          tar -C dist -czf "carsoncc-${{ github.ref_name }}-linux-x86_64.tar.gz" carsoncc-linux-x86_64
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: carsoncc-linux-packages
+          path: |
+            *.deb
+            *.tar.gz
+
+  windows:
+    name: Build Windows package
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Build compiler
+        shell: cmd
+        run: cl /nologo /std:c11 /W4 /I src src\*.c /Fe:carsoncc.exe
+
+      - name: Package Windows release
+        shell: pwsh
+        run: |
+          $dir = "dist/carsoncc-windows-x86_64"
+          New-Item -ItemType Directory -Force -Path $dir | Out-Null
+          Copy-Item carsoncc.exe $dir
+          Copy-Item README.md $dir
+          Copy-Item -Recurse examples $dir
+          Copy-Item -Recurse osappreleasepackages $dir
+          Compress-Archive -Path "$dir\*" -DestinationPath "carsoncc-${{ github.ref_name }}-windows-x86_64.zip" -Force
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: carsoncc-windows-package
+          path: '*.zip'
+
+  source:
+    name: Package source tree
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create source archive
+        run: |
+          git archive --format=tar.gz --prefix="Carsoncc-${{ github.ref_name }}/" HEAD > "carsoncc-${{ github.ref_name }}-source.tar.gz"
+
+      - name: Upload source artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: carsoncc-source-package
+          path: '*.tar.gz'
+
+  release:
+    name: Publish GitHub release
+    needs: [linux, windows, source]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Linux packages
+        uses: actions/download-artifact@v4
+        with:
+          name: carsoncc-linux-packages
+          path: release
+
+      - name: Download Windows package
+        uses: actions/download-artifact@v4
+        with:
+          name: carsoncc-windows-package
+          path: release
+
+      - name: Download source package
+        uses: actions/download-artifact@v4
+        with:
+          name: carsoncc-source-package
+          path: release
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" release/* \
+            --title "CarsonCC ${{ github.ref_name }}" \
+            --generate-notes
