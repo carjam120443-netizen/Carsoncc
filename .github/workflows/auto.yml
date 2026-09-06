@@ -1,0 +1,90 @@
+name: CarsonCC Auto Build
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 3 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: carsoncc-auto-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux:
+    name: Automatic Linux build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build and test
+        run: |
+          make clean all
+          make test
+          ./carsoncc examples/hello.car -S -o /tmp/hello.s
+          test -s /tmp/hello.s
+
+      - name: Test Windows backend emission
+        run: |
+          ./carsoncc examples/hello.car -target windows -S -o /tmp/hello.asm
+          test -s /tmp/hello.asm
+          grep -q "main PROC" /tmp/hello.asm
+
+      - name: Upload Linux compiler
+        uses: actions/upload-artifact@v4
+        with:
+          name: carsoncc-auto-linux-x86_64
+          path: carsoncc
+          if-no-files-found: error
+
+  windows:
+    name: Automatic Windows build
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure MSVC and MASM
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Build compiler
+        shell: cmd
+        run: cl /nologo /std:c11 /W4 /I src src\*.c /Fe:carsoncc.exe
+
+      - name: Build a Carson program with native Windows backend
+        shell: cmd
+        run: |
+          carsoncc.exe examples\hello.car -target windows -o hello.exe
+          hello.exe
+          if not "%ERRORLEVEL%"=="50" exit /b 1
+
+      - name: Test Windows assembly output
+        shell: cmd
+        run: |
+          carsoncc.exe examples\hello.car -target windows -S -o hello.asm
+          findstr /C:"main PROC" hello.asm
+
+      - name: Upload Windows compiler
+        uses: actions/upload-artifact@v4
+        with:
+          name: carsoncc-auto-windows-x86_64
+          path: carsoncc.exe
+          if-no-files-found: error
+
+  auto-status:
+    name: Automatic build status
+    if: ${{ always() }}
+    needs: [linux, windows]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require all platform builds to pass
+        run: |
+          test "${{ needs.linux.result }}" = "success"
+          test "${{ needs.windows.result }}" = "success"
