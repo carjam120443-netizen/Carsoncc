@@ -35,12 +35,20 @@ Name: "{autoprograms}\CarsonCC\Examples"; Filename: "{app}\examples"
 const
   EnvironmentKey = 'Software\Environment';
   EnvironmentValue = 'Path';
+  HWND_BROADCAST = $FFFF;
+  WM_SETTINGCHANGE = $001A;
+  SMTO_ABORTIFHUNG = $0002;
+
+procedure SendMessageTimeout(hWnd: Integer; Msg: Cardinal; wParam: Integer;
+  lParam: string; fuFlags, uTimeout: Cardinal; var lpdwResult: Integer);
+  external 'SendMessageTimeoutW@user32.dll stdcall';
 
 procedure BroadcastEnvironmentChange;
 var
   ResultCode: Integer;
 begin
-  Exec(ExpandConstant('{cmd}'), '/C setx CARSONCC_PATH_REFRESH 1 >nul 2>&1', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  SendMessageTimeout(HWND_BROADCAST, WM_SETTINGCHANGE, 0, 'Environment',
+    SMTO_ABORTIFHUNG, 5000, ResultCode);
 end;
 
 function NormalizePathPart(const S: string): string;
@@ -57,7 +65,7 @@ procedure AddCarsonCCToPath;
 var
   OldPath, NewPath, AppPath: string;
 begin
-  AppPath := ExpandConstant('{app}');
+  AppPath := NormalizePathPart(ExpandConstant('{app}'));
   if RegQueryStringValue(HKEY_CURRENT_USER, EnvironmentKey, EnvironmentValue, OldPath) then
   begin
     if Pos(';' + AppPath + ';', ';' + OldPath + ';') > 0 then
