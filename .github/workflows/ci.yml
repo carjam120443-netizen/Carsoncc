@@ -21,19 +21,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Build compiler
         run: make clean all
-
       - name: Run compiler tests
         run: make test
-
       - name: Test assembly output
         run: |
           ./carsoncc examples/hello.car -S -o hello.s
           test -s hello.s
           grep -q '.globl main' hello.s
-
       - name: Test function calls
         run: |
           cat > /tmp/functions.car <<'EOF'
@@ -50,7 +46,6 @@ jobs:
           rc=$?
           set -e
           test "$rc" -eq 42
-
       - name: Upload compiler binary
         uses: actions/upload-artifact@v4
         with:
@@ -64,14 +59,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Configure MSVC
         uses: ilammy/msvc-dev-cmd@v1
-
       - name: Build compiler
         shell: cmd
-        run: cl /nologo /std:c11 /W4 /I src ast.c codegen.c codegen_windows.c ir.c lexer.c main.c parser.c semantic_full.c /Fe:carsoncc.exe
-
+        run: cl /nologo /std:c11 /W4 /I src src\ast.c src\codegen.c src\codegen_windows.c src\ir.c src\lexer.c src\main.c src\parser.c src\semantic_full.c /Fe:carsoncc.exe
       - name: Upload Windows compiler
         uses: actions/upload-artifact@v4
         with:
