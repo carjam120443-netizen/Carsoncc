@@ -4,7 +4,6 @@
   #define MyAppVersion "0.1.0"
 #endif
 #define MyAppPublisher "CarsonCC Project"
-#define MyAppExeName "carsoncc.exe"
 
 [Setup]
 AppId={{B7D5E2C8-4D38-4E4A-9A7A-1C7D3C9F4E21}
@@ -24,9 +23,9 @@ WizardStyle=modern
 UninstallDisplayName=CarsonCC
 
 [Files]
-Source: "carsoncc.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "README.md"; DestDir: "{app}"; Flags: ignoreversion
-Source: "examples\*"; DestDir: "{app}\examples"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\carsoncc.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\README.md"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\examples\*"; DestDir: "{app}\examples"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{autoprograms}\CarsonCC\CarsonCC Documentation"; Filename: "{app}\README.md"
