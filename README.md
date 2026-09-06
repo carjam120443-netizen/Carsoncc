@@ -33,6 +33,25 @@ On a Windows machine with MSVC and MASM installed, CarsonCC can also build the W
 carsoncc examples\hello.car -target windows -o hello.exe
 ```
 
+## 📱 CarsonCC Mobile
+
+CarsonCC now includes a native Android companion app under `mobile/`.
+
+**CarsonCC Mobile** is designed as a lightweight background bridge for terminal applications and future Android/system integrations. It deliberately avoids constant polling and wake locks. When the user starts the service, it keeps a small localhost listener on `127.0.0.1:3939` and responds to simple commands:
+
+```text
+ping
+status
+version
+help
+```
+
+A terminal app can connect locally, for example with a TCP client such as `nc`, without requiring internet access. The service is user-controlled and uses a low-importance ongoing notification while active.
+
+The Android app does **not** grant itself privileged Android/system access. Future CarsonCC Mobile work can add narrowly scoped integrations as Android APIs and permissions allow.
+
+GitHub releases automatically build an unsigned release APK alongside the Linux, Windows, and source packages. The APK is intended for sideloading/testing while the mobile layer is developed.
+
 ## 🧠 Compiler Pipeline
 
 ```text
@@ -77,7 +96,8 @@ The IR layer is the next major compiler architecture step.
 - 🔗 Native executable generation through the host toolchain
 - 🧪 Automated end-to-end tests
 - 🤖 Always-on GitHub Actions automation
-- 📦 Automatic release packages from `v*` tags
+- 📱 Android companion/background bridge
+- 📦 Automatic release packages from `v*` tags and main-branch builds
 
 ## 📝 Carson Syntax
 
@@ -110,6 +130,7 @@ The release workflow currently produces:
 - 🐧 Linux x86-64 `.tar.gz`
 - 🟠 Ubuntu/Debian x86-64 `.deb`
 - 🪟 Windows x86-64 `.zip`
+- 🤖 Android release `.apk`
 - 📦 Source `.tar.gz`
 
 ## 🤖 Automatic GitHub Actions
@@ -149,8 +170,11 @@ The release workflow automatically:
 4. Creates a Linux x86-64 archive.
 5. Builds the Windows compiler with MSVC.
 6. Creates a Windows x86-64 ZIP package.
-7. Creates a source archive.
-8. Publishes a GitHub Release containing the generated files.
+7. Builds the Android release APK.
+8. Creates a source archive.
+9. Publishes a GitHub Release containing the generated files.
+
+Main-branch pushes also use an automatic `0.1.<run>` version so package builds can be published without manually creating a tag.
 
 No manual package assembly is required.
 
@@ -163,6 +187,17 @@ Carsoncc/
 │       ├── auto.yml
 │       ├── ci.yml
 │       └── release.yml
+├── mobile/
+│   ├── app/
+│   │   └── src/main/
+│   │       ├── AndroidManifest.xml
+│   │       ├── java/com/carsoncc/mobile/
+│   │       │   ├── MainActivity.java
+│   │       │   └── CarsonService.java
+│   │       └── res/values/styles.xml
+│   ├── app/build.gradle
+│   ├── build.gradle
+│   └── settings.gradle
 ├── src/
 │   ├── main.c
 │   ├── lexer.c/.h
@@ -205,6 +240,12 @@ CarsonCC is written in C11 and currently needs a C compiler plus the appropriate
 make
 make test
 make clean
+```
+
+The Android companion is built with Gradle 8.9 and Android Gradle Plugin 8.7.3:
+
+```bash
+gradle -p mobile assembleRelease
 ```
 
 ## 🗺️ Roadmap
@@ -257,10 +298,13 @@ make clean
 - [x] Ubuntu/Debian `.deb` packaging
 - [x] Generic Linux portable packaging
 - [x] Windows ZIP packaging
+- [x] Android companion APK build
 - [x] Automatic GitHub Releases from version tags
 - [ ] APT repository
-- [ ] Windows installer
+- [x] Windows installer
 - [ ] Terminal integrations
+- [ ] Android terminal command API
+- [ ] Android system integrations
 - [ ] Cross-compilation
 - [ ] Beta OS target
 - [ ] Self-hosting CarsonCC
@@ -278,7 +322,7 @@ Carson source
       ↓
  Target backend
       ↓
- Windows / Ubuntu / Linux / Beta OS
+ Windows / Ubuntu / Linux / Android / Beta OS
       ↓
  Native Carson application 🚀
 ```
