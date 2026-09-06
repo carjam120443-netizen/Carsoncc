@@ -1,7 +1,12 @@
 #ifndef CARSONCC_PARSER_H
 #define CARSONCC_PARSER_H
 
-/* Parser interface; converts tokens into an abstract syntax tree. */
-void parser_init(void);
+#include "ast.h"
+#include "lexer.h"
+
+typedef struct { Lexer lexer; Token current; Token previous; int had_error; } Parser;
+
+void parser_init(Parser *parser, const char *source);
+AstNode *parser_parse(Parser *parser);
 
 #endif
