@@ -2,6 +2,9 @@ plugins {
     id 'com.android.application'
 }
 
+def carsonVersion = project.hasProperty('CARSONCC_VERSION') ? project.property('CARSONCC_VERSION').toString() : '0.1.0'
+def carsonVersionCode = project.hasProperty('CARSONCC_VERSION_CODE') ? project.property('CARSONCC_VERSION_CODE').toString().toInteger() : 1
+
 android {
     namespace 'com.carsoncc.mobile'
     compileSdk 35
@@ -10,8 +13,8 @@ android {
         applicationId 'com.carsoncc.mobile'
         minSdk 26
         targetSdk 35
-        versionCode (project.findProperty('CARSONCC_VERSION_CODE') ?: '1').toInteger()
-        versionName project.findProperty('CARSONCC_VERSION') ?: '0.1.0'
+        versionCode carsonVersionCode
+        versionName carsonVersion
     }
 
     buildTypes {
