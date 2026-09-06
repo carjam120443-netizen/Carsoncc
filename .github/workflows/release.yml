@@ -114,6 +114,33 @@ jobs:
             installer\dist\*.exe
           if-no-files-found: error
 
+  android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Build CarsonCC Mobile APK
+        run: |
+          VERSION="${{ env.RELEASE_VERSION }}"
+          VERSION="${VERSION#v}"
+          gradle -p mobile assembleRelease -PCARSONCC_VERSION="$VERSION" -PCARSONCC_VERSION_CODE="${{ github.run_number }}"
+      - name: Upload Android APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: carsoncc-android-apk
+          path: mobile/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+
   source:
     name: Package source tree
     runs-on: ubuntu-latest
@@ -131,7 +158,7 @@ jobs:
 
   release:
     name: Publish GitHub release
-    needs: [linux, windows, source]
+    needs: [linux, windows, android, source]
     runs-on: ubuntu-latest
     steps:
       - name: Download Linux packages
@@ -143,6 +170,11 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: carsoncc-windows-packages
+          path: release
+      - name: Download Android APK
+        uses: actions/download-artifact@v4
+        with:
+          name: carsoncc-android-apk
           path: release
       - name: Download source package
         uses: actions/download-artifact@v4
