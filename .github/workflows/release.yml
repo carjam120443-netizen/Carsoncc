@@ -74,11 +74,14 @@ jobs:
         shell: cmd
         run: cl /nologo /std:c11 /W4 /I src src\ast.c src\codegen.c src\codegen_windows.c src\ir.c src\lexer.c src\main.c src\parser.c src\semantic_full.c /Fe:carsoncc.exe
       - name: Test native Windows compiler
-        shell: cmd
+        shell: pwsh
         run: |
-          carsoncc.exe examples\hello.car -target windows -o hello.exe
-          .\hello.exe
-          if not "%ERRORLEVEL%"=="50" exit /b 1
+          & .\carsoncc.exe examples\hello.car -target windows -o hello.exe
+          if ($LASTEXITCODE -ne 0) { throw "CarsonCC failed to build hello.exe (exit code $LASTEXITCODE)" }
+          & .\hello.exe
+          $programExitCode = $LASTEXITCODE
+          Write-Host "hello.exe returned $programExitCode (expected 50)"
+          if ($programExitCode -ne 50) { throw "hello.exe returned $programExitCode; expected 50" }
       - name: Build Windows ZIP
         shell: pwsh
         run: |
