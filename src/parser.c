@@ -11,7 +11,7 @@ static char*token_text(Token t){char*s=malloc(t.length+1);if(!s)return NULL;memc
 static AstNode*expression(Parser*p);
 static AstNode*primary(Parser*p){
  if(match(p,TOKEN_INTEGER)){AstNode*n=ast_new(AST_INTEGER,p->previous.line);if(n)n->integer_value=strtol(p->previous.start,NULL,10);return n;}
- if(match(p,TOKEN_IDENTIFIER)){Token name=p->previous;if(match(p,TOKEN_LPAREN)){AstNode*n=ast_new(AST_CALL,name.line);if(!n)return NULL;n->name=token_text(name);if(!check(p,TOKEN_RPAREN)){do{AstNode*a=expression(p);if(!a||!ast_add_child(n,a)){ast_free(a);ast_free(n);return NULL;}}while(match(p,TOKEN_COMMA));}consume(p,TOKEN_RPAREN,"expected ')' after arguments");return n;}AstNode*n=ast_new(AST_VARIABLE,name.line);if(n)n->name=token_text(name);return n;}
+ if(match(p,TOKEN_IDENTIFIER)){Token name=p->previous;if(match(p,TOKEN_LPAREN)){AstNode*call=ast_new(AST_CALL,name.line);if(!call)return NULL;call->name=token_text(name);if(!check(p,TOKEN_RPAREN)){do{AstNode*a=expression(p);if(!a||!ast_add_child(call,a)){ast_free(a);ast_free(call);return NULL;}}while(match(p,TOKEN_COMMA));}consume(p,TOKEN_RPAREN,"expected ')' after arguments");return call;}AstNode*variable=ast_new(AST_VARIABLE,name.line);if(variable)variable->name=token_text(name);return variable;}
  if(match(p,TOKEN_LPAREN)){AstNode*n=expression(p);consume(p,TOKEN_RPAREN,"expected ')' after expression");return n;}
  error(p,"expected expression");return NULL;
 }
