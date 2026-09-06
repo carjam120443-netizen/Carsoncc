@@ -125,6 +125,10 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Install Android SDK packages
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
@@ -133,7 +137,12 @@ jobs:
         run: |
           VERSION="${{ env.RELEASE_VERSION }}"
           VERSION="${VERSION#v}"
-          gradle -p mobile assembleRelease -PCARSONCC_VERSION="$VERSION" -PCARSONCC_VERSION_CODE="${{ github.run_number }}"
+          gradle -p mobile clean assembleRelease -PCARSONCC_VERSION="$VERSION" -PCARSONCC_VERSION_CODE="${{ github.run_number }}" --stacktrace
+      - name: Verify APK exists
+        run: |
+          APK="$(find mobile/app/build/outputs/apk/release -maxdepth 1 -name '*.apk' -print -quit)"
+          test -s "$APK"
+          echo "Built APK: $APK"
       - name: Upload Android APK
         uses: actions/upload-artifact@v4
         with:
