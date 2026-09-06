@@ -1,13 +1,14 @@
 package com.carsoncc.mobile;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-public class MainActivity extends Activity {
+import androidx.activity.ComponentActivity;
+
+public class MainActivity extends ComponentActivity {
     private TextView status;
 
     @Override
