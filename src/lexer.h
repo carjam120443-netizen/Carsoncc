@@ -1,9 +1,11 @@
 #ifndef CARSONCC_LEXER_H
 #define CARSONCC_LEXER_H
 
-/* Token kinds used by the Carson language lexer. */
+#include <stddef.h>
+
 typedef enum {
     TOKEN_EOF = 0,
+    TOKEN_ERROR,
     TOKEN_IDENTIFIER,
     TOKEN_INTEGER,
     TOKEN_STRING,
@@ -26,8 +28,19 @@ typedef enum {
 typedef struct {
     TokenKind kind;
     const char *start;
-    unsigned long length;
-    unsigned long line;
+    size_t length;
+    size_t line;
 } Token;
+
+typedef struct {
+    const char *source;
+    size_t length;
+    size_t position;
+    size_t line;
+} Lexer;
+
+void lexer_init(Lexer *lexer, const char *source);
+Token lexer_next(Lexer *lexer);
+const char *token_kind_name(TokenKind kind);
 
 #endif
