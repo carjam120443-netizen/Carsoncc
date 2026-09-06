@@ -1,0 +1,4 @@
+fn main() {
+    let message = "Hello from CarsonCC!";
+    return 0;
+}
