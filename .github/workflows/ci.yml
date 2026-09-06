@@ -52,26 +52,6 @@ jobs:
           name: carsoncc-linux-x86_64
           path: carsoncc
           if-no-files-found: error
-      - name: Set up Java for Android APK
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-      - name: Install Android build SDK
-        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
-      - name: Build Android APK on Linux
-        uses: gradle/gradle-build-action@v3
-        with:
-          gradle-version: '8.9'
-          arguments: -p mobile clean assembleRelease -PCARSONCC_VERSION=0.1.${{ github.run_number }} -PCARSONCC_VERSION_CODE=${{ github.run_number }}
-      - name: Upload Linux-built Android APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: carsoncc-android-apk-linux
-          path: mobile/app/build/outputs/apk/release/*.apk
-          if-no-files-found: error
 
   windows:
     name: Windows compiler build
@@ -90,6 +70,13 @@ jobs:
           name: carsoncc-windows-x86_64
           path: carsoncc.exe
           if-no-files-found: error
+
+  android:
+    name: Android APK build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Set up Java for Android APK
         uses: actions/setup-java@v4
         with:
@@ -98,18 +85,21 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
       - name: Install Android build SDK
-        shell: pwsh
         run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
-      - name: Build Android APK on Windows
-        shell: pwsh
+      - name: Build Android APK
         run: gradle -p mobile clean assembleRelease "-PCARSONCC_VERSION=0.1.${{ github.run_number }}" "-PCARSONCC_VERSION_CODE=${{ github.run_number }}"
-      - name: Upload Windows-built Android APK
+      - name: Verify Android APK
+        run: |
+          APK="$(find mobile/app/build/outputs/apk/release -maxdepth 1 -name '*.apk' -print -quit)"
+          test -s "$APK"
+          echo "Built APK: $APK"
+      - name: Upload Android APK
         uses: actions/upload-artifact@v4
         with:
-          name: carsoncc-android-apk-windows
+          name: carsoncc-android-apk
           path: mobile/app/build/outputs/apk/release/*.apk
           if-no-files-found: error
