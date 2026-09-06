@@ -104,7 +104,9 @@ jobs:
         run: |
           APK="$(find mobile/app/build/outputs/apk/release -maxdepth 1 -name '*.apk' -print -quit)"
           test -s "$APK"
-          apksigner verify --verbose "$APK"
+          APKSIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
+          test -x "$APKSIGNER"
+          "$APKSIGNER" verify --verbose "$APK"
           echo "Verified APK: $APK"
       - name: Upload Android APK
         uses: actions/upload-artifact@v4
