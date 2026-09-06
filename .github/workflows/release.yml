@@ -107,7 +107,9 @@ jobs:
           if (-not (Test-Path $iscc)) { throw "Inno Setup compiler not found" }
           & $iscc "installer\CarsonCC.iss"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          Get-ChildItem -Recurse dist
+          $installer = Get-ChildItem "installer\dist\*.exe" -File -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $installer) { throw "Inno Setup completed but no installer executable was produced in installer\dist" }
+          Write-Host "Built installer: $($installer.FullName)"
       - name: Upload Windows packages
         uses: actions/upload-artifact@v4
         with:
@@ -194,14 +196,28 @@ jobs:
         with:
           name: carsoncc-source-package
           path: release
-      - name: Show release files
-        run: find release -type f -print
+      - name: Validate release files
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Release files:"
+          find release -type f -print
+          test -n "$(find release -type f -name '*.deb' -print -quit)"
+          test -n "$(find release -type f -name '*.tar.gz' -print -quit)"
+          test -n "$(find release -type f -name '*.zip' -print -quit)"
+          test -n "$(find release -type f -name '*.exe' -print -quit)"
+          test -n "$(find release -type f -name '*.apk' -print -quit)"
       - name: Publish GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
+        shell: bash
         run: |
+          set -euo pipefail
           VERSION="${{ env.RELEASE_VERSION }}"
           VERSION="${VERSION#v}"
           TAG="v${VERSION}"
           gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "CarsonCC v${VERSION}" --generate-notes
-          find release -type f -print0 | xargs -0 -r gh release upload "$TAG" --clobber
+          while IFS= read -r -d '' file; do
+            echo "Uploading $file"
+            gh release upload "$TAG" "$file" --clobber
+          done < <(find release -type f -print0)
