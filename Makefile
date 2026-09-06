@@ -1,6 +1,6 @@
 CC ?= cc
 CFLAGS ?= -std=c11 -Wall -Wextra -Wpedantic -O2 -I src
-SOURCES := $(wildcard src/*.c)
+SOURCES := $(filter-out src/semantic.c,$(wildcard src/*.c))
 OBJECTS := $(SOURCES:.c=.o)
 TARGET := carsoncc
 
