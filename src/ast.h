@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 
-typedef enum { AST_PROGRAM, AST_FUNCTION, AST_BLOCK, AST_RETURN, AST_LET, AST_INTEGER, AST_BINARY } AstKind;
+typedef enum { AST_PROGRAM, AST_FUNCTION, AST_BLOCK, AST_RETURN, AST_LET, AST_VARIABLE, AST_INTEGER, AST_BINARY } AstKind;
 typedef enum { OP_ADD, OP_SUB, OP_MUL, OP_DIV } BinaryOp;
 
 typedef struct AstNode AstNode;
