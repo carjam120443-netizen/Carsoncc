@@ -82,6 +82,7 @@ jobs:
           $programExitCode = $LASTEXITCODE
           Write-Host "hello.exe returned $programExitCode (expected 50)"
           if ($programExitCode -ne 50) { throw "hello.exe returned $programExitCode; expected 50" }
+          exit 0
       - name: Build Windows ZIP
         shell: pwsh
         run: |
