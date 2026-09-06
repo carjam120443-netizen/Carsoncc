@@ -67,7 +67,7 @@ jobs:
 
       - name: Build compiler
         shell: cmd
-        run: cl /nologo /std:c11 /W4 /I src src\*.c /Fe:carsoncc.exe
+        run: cl /nologo /std:c11 /W4 /I src ast.c codegen.c codegen_windows.c ir.c lexer.c main.c parser.c semantic_full.c /Fe:carsoncc.exe
 
       - name: Package Windows release
         shell: pwsh
