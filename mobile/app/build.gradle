@@ -22,22 +22,13 @@ android {
         versionName carsonVersion
     }
 
-    signingConfigs {
-        // Use the SDK debug keystore for CI/release artifacts so the APK is
-        // cryptographically signed and directly installable on Android.
-        // A production release can replace this with a private release key.
-        ciRelease {
-            storeFile file(System.getProperty('user.home') + '/.android/debug.keystore')
-            storePassword 'android'
-            keyAlias 'AndroidDebugKey'
-            keyPassword 'android'
-        }
-    }
-
     buildTypes {
         release {
             minifyEnabled false
-            signingConfig signingConfigs.ciRelease
+            // CI/release artifacts use the SDK's standard debug key so every
+            // generated APK is cryptographically signed and installable.
+            // A production release can replace this with a private release key.
+            signingConfig signingConfigs.debug
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
