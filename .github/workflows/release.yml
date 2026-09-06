@@ -194,6 +194,8 @@ jobs:
         with:
           name: carsoncc-source-package
           path: release
+      - name: Show release files
+        run: find release -type f -print
       - name: Publish GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -202,4 +204,4 @@ jobs:
           VERSION="${VERSION#v}"
           TAG="v${VERSION}"
           gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "CarsonCC v${VERSION}" --generate-notes
-          gh release upload "$TAG" release/* --clobber
+          find release -type f -print0 | xargs -0 -r gh release upload "$TAG" --clobber
