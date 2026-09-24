@@ -52,6 +52,17 @@ jobs:
       - name: Build compiler
         shell: cmd
         run: cl /nologo /std:c11 /W4 /I src src\ast.c src\codegen.c src\codegen_windows.c src\ir.c src\lexer.c src\main.c src\parser.c src\semantic_full.c /Fe:carsoncc.exe
+      - name: Build Windows GUI
+        shell: cmd
+        run: cl /nologo /std:c11 /W4 /O2 gui\main.c user32.lib comdlg32.lib /link /SUBSYSTEM:WINDOWS /OUT:CarsonCC.exe
+      - name: Smoke test Windows GUI executable
+        shell: powershell
+        run: |
+          if (!(Test-Path .\CarsonCC.exe)) { throw "CarsonCC.exe was not created" }
+          $p = Start-Process .\CarsonCC.exe -PassThru
+          Start-Sleep -Milliseconds 500
+          if ($p.HasExited) { throw "CarsonCC GUI exited immediately with code $($p.ExitCode)" }
+          Stop-Process -Id $p.Id -Force
       - name: Build a Carson program with native Windows backend
         shell: cmd
         run: |
@@ -64,11 +75,13 @@ jobs:
         run: |
           carsoncc.exe examples\hello.car -target windows -S -o hello.asm
           findstr /C:"main PROC" hello.asm
-      - name: Upload Windows compiler
+      - name: Upload Windows compiler and GUI
         uses: actions/upload-artifact@v4
         with:
           name: carsoncc-auto-windows-x86_64
-          path: carsoncc.exe
+          path: |
+            carsoncc.exe
+            CarsonCC.exe
           if-no-files-found: error
 
   android:
