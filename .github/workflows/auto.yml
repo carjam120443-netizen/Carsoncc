@@ -44,6 +44,7 @@ jobs:
   windows:
     name: Automatic Windows build
     runs-on: windows-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -51,30 +52,47 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
       - name: Build compiler
         shell: cmd
-        run: cl /nologo /std:c11 /W4 /I src src\ast.c src\codegen.c src\codegen_windows.c src\ir.c src\lexer.c src\main.c src\parser.c src\semantic_full.c /Fe:carsoncc.exe
+        run: cl /nologo /std:c11 /W4 /I src src\\ast.c src\\codegen.c src\\codegen_windows.c src\\ir.c src\\lexer.c src\\main.c src\\parser.c src\\semantic_full.c /Fe:carsoncc.exe
       - name: Build Windows GUI
         shell: cmd
-        run: cl /nologo /std:c11 /W4 /O2 gui\main.c user32.lib comdlg32.lib gdi32.lib /link /SUBSYSTEM:WINDOWS /OUT:CarsonCC.exe
+        run: cl /nologo /std:c11 /W4 /O2 gui\\main.c user32.lib comdlg32.lib gdi32.lib /link /SUBSYSTEM:WINDOWS /OUT:CarsonCC.exe
       - name: Smoke test Windows GUI executable
         shell: powershell
         run: |
-          if (!(Test-Path .\CarsonCC.exe)) { throw "CarsonCC.exe was not created" }
-          $p = Start-Process .\CarsonCC.exe -PassThru
+          if (!(Test-Path .\\CarsonCC.exe)) { throw "CarsonCC.exe was not created" }
+          $p = Start-Process .\\CarsonCC.exe -PassThru
           Start-Sleep -Milliseconds 500
           if ($p.HasExited) { throw "CarsonCC GUI exited immediately with code $($p.ExitCode)" }
           Stop-Process -Id $p.Id -Force
+      - name: Verify MASM toolchain
+        shell: cmd
+        run: |
+          where ml64
+          where link
       - name: Build a Carson program with native Windows backend
         shell: cmd
         run: |
-          carsoncc.exe examples\hello.car -target windows -o hello.exe
-          .\hello.exe
+          carsoncc.exe examples\\hello.car -target windows -S -o hello.asm
+          if not exist hello.asm exit /b 1
+          ml64.exe /nologo /c /Fohello.obj hello.asm
+          if errorlevel 1 exit /b 1
+          link.exe /nologo /MACHINE:X64 /SUBSYSTEM:CONSOLE /ENTRY:main /OUT:hello.exe hello.obj
+          if errorlevel 1 exit /b 1
+          .\\hello.exe
           if not "%ERRORLEVEL%"=="50" exit /b 1
           exit /b 0
+      - name: Test compiler Windows linking path
+        shell: cmd
+        run: |
+          carsoncc.exe examples\\hello.car -target windows -o hello-linked.exe
+          if not exist hello-linked.exe exit /b 1
+          .\\hello-linked.exe
+          if not "%ERRORLEVEL%"=="50" exit /b 1
       - name: Test Windows assembly output
         shell: cmd
         run: |
-          carsoncc.exe examples\hello.car -target windows -S -o hello.asm
-          findstr /C:"main PROC" hello.asm
+          carsoncc.exe examples\\hello.car -target windows -S -o hello-check.asm
+          findstr /C:"main PROC" hello-check.asm
       - name: Upload Windows compiler and GUI
         uses: actions/upload-artifact@v4
         with:
