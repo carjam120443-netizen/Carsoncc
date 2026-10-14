@@ -92,7 +92,7 @@ jobs:
           Copy-Item README.md $dir
           Copy-Item -Recurse examples $dir
           Copy-Item -Recurse osappreleasepackages $dir
-          Copy-Item installer\\Install-CarsonCC.ps1 $dir
+          Copy-Item installer\Install-CarsonCC.ps1 $dir
           Compress-Archive -Path "$dir\*" -DestinationPath "carsoncc-${{ env.RELEASE_VERSION }}-windows-x86_64.zip" -Force
       - name: Install Inno Setup
         shell: pwsh
