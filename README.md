@@ -42,10 +42,10 @@ The Windows release includes both a conventional per-user Setup EXE and a portab
 3. Run:
 
    ```powershell
-   powershell -NoProfile -ExecutionPolicy Bypass -File .\\Install-CarsonCC.ps1
+   powershell -NoProfile -ExecutionPolicy Bypass -File .\Install-CarsonCC.ps1
    ```
 
-By default, this creates a `CarsonCC-Portable` folder beside the script. Choose another destination with `-InstallDir "D:\\Tools\\CarsonCC"`. The script copies the compiler, examples, and documentation; it does not require administrator rights or modify PATH. You can move the resulting folder or keep it on removable storage. You can also skip the script and run `carsoncc.exe` directly from the extracted ZIP.
+By default, this creates a `CarsonCC-Portable` folder beside the script. Choose another destination with `-InstallDir "D:\Tools\CarsonCC"`. The script copies the compiler, examples, and documentation; it does not require administrator rights or modify PATH. You can move the resulting folder or keep it on removable storage. You can also skip the script and run `carsoncc.exe` directly from the extracted ZIP.
 
 ## 📱 CarsonCC Mobile
 
