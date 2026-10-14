@@ -78,16 +78,18 @@ jobs:
           if errorlevel 1 exit /b 1
           link.exe /nologo /MACHINE:X64 /SUBSYSTEM:CONSOLE /ENTRY:carsoncc_entry /OUT:hello.exe hello.obj kernel32.lib
           if errorlevel 1 exit /b 1
-          .\\hello.exe
-          if not "%ERRORLEVEL%"=="50" exit /b 1
+          echo [smoke] launching hello.exe (expected exit code 50)
+          powershell -NoProfile -ExecutionPolicy Bypass -Command "$p = Start-Process -FilePath '.\\hello.exe' -PassThru; if (-not $p.WaitForExit(10000)) { $p.Kill(); throw 'hello.exe timed out after 10 seconds' }; Write-Host ('hello.exe exit code: ' + $p.ExitCode); if ($p.ExitCode -ne 50) { throw ('expected exit code 50, got ' + $p.ExitCode) }"
+          if errorlevel 1 exit /b 1
           exit /b 0
       - name: Test compiler Windows linking path
         shell: cmd
         run: |
           carsoncc.exe examples\\hello.car -target windows -o hello-linked.exe
           if not exist hello-linked.exe exit /b 1
-          .\\hello-linked.exe
-          if not "%ERRORLEVEL%"=="50" exit /b 1
+          echo [smoke] launching hello-linked.exe (expected exit code 50)
+          powershell -NoProfile -ExecutionPolicy Bypass -Command "$p = Start-Process -FilePath '.\\hello-linked.exe' -PassThru; if (-not $p.WaitForExit(10000)) { $p.Kill(); throw 'hello-linked.exe timed out after 10 seconds' }; Write-Host ('hello-linked.exe exit code: ' + $p.ExitCode); if ($p.ExitCode -ne 50) { throw ('expected exit code 50, got ' + $p.ExitCode) }"
+          if errorlevel 1 exit /b 1
       - name: Test Windows assembly output
         shell: cmd
         run: |
