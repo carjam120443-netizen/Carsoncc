@@ -199,25 +199,25 @@ int ir_lower(const AstNode *ast, IRProgram *out) {
     if (!out) return 0;
     memset(out, 0, sizeof(*out));
     if (!ast || ast->kind != AST_PROGRAM || !ast->child_count) {
-        fprintf(stderr, "CarsonCC IR: expected a non-empty program AST\\n");
+        fprintf(stderr, "CarsonCC IR: expected a non-empty program AST\n");
         return 0;
     }
     out->functions = (IRFunction *)calloc(ast->child_count, sizeof(*out->functions));
     if (!out->functions) {
-        fprintf(stderr, "CarsonCC IR: out of memory\\n");
+        fprintf(stderr, "CarsonCC IR: out of memory\n");
         return 0;
     }
     out->function_count = ast->child_count;
     for (i = 0; i < ast->child_count; ++i) {
         if (!ast->children[i] || ast->children[i]->kind != AST_FUNCTION ||
             !lower_function(ast->children[i], &out->functions[i])) {
-            fprintf(stderr, "CarsonCC IR: failed to lower function %lu\\n", (unsigned long)i);
+            fprintf(stderr, "CarsonCC IR: failed to lower function %lu\n", (unsigned long)i);
             ir_free(out);
             return 0;
         }
     }
     if (!ir_verify(out, stderr)) {
-        fprintf(stderr, "CarsonCC IR: verification failed\\n");
+        fprintf(stderr, "CarsonCC IR: verification failed\n");
         ir_free(out);
         return 0;
     }
