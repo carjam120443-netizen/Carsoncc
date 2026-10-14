@@ -76,7 +76,7 @@ jobs:
           if not exist hello.asm exit /b 1
           ml64.exe /nologo /c /Fohello.obj hello.asm
           if errorlevel 1 exit /b 1
-          link.exe /nologo /MACHINE:X64 /SUBSYSTEM:CONSOLE /ENTRY:main /OUT:hello.exe hello.obj
+          link.exe /nologo /MACHINE:X64 /SUBSYSTEM:CONSOLE /ENTRY:carsoncc_entry /OUT:hello.exe hello.obj kernel32.lib
           if errorlevel 1 exit /b 1
           .\\hello.exe
           if not "%ERRORLEVEL%"=="50" exit /b 1
