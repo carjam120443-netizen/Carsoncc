@@ -108,7 +108,7 @@ int codegen_windows_x86_64(const AstNode *program, const char *output_path) {
             return 0;
         }
     }
-    fprintf(out, "carsoncc_entry PROC\n    sub rsp, 40\n    call main\n    mov ecx, eax\n    call ExitProcess\ncarsoncc_entry ENDP\n");
+    fprintf(out, "PUBLIC carsoncc_entry\ncarsoncc_entry PROC\n    and rsp, -16\n    sub rsp, 32\n    call main\n    mov ecx, eax\n    call ExitProcess\ncarsoncc_entry ENDP\n");
     fprintf(out, "END\n");
     fclose(out);
     return 1;
