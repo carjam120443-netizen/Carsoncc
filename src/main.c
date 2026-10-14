@@ -36,6 +36,14 @@ int main(int argc,char **argv){
     int windows_target = strcmp(target,"windows")==0 || strcmp(target,"win64")==0;
     if(!windows_target && strcmp(target,"host")!=0){fprintf(stderr,"CarsonCC: unknown target '%s'\n",target);return EXIT_FAILURE;}
 
+    char default_asm[512];char default_out[512];
+    if(!output){snprintf(default_out,sizeof(default_out),"a.out");output=default_out;}
+    snprintf(default_asm,sizeof(default_asm),"%s.carsoncc.%s",output,windows_target?"asm":"s");
+    const char *asm_path=assembly_only?output:default_asm;
+    size_t size=0;char *source=read_file(input,&size);(void)size;if(!source)return EXIT_FAILURE;
+    Parser parser;parser_init(&parser,source);AstNode *program=parser_parse(&parser);free(source);
+    if(!program){fprintf(stderr,"CarsonCC: compilation failed during parsing\n");return EXIT_FAILURE;}
+    if(!semantic_check(program)){ast_free(program);fprintf(stderr,"CarsonCC: compilation failed during semantic analysis\n");return EXIT_FAILURE;}
     if(dump_ir){
         IRProgram ir;
         int lowered=ir_lower(program,&ir);
@@ -45,15 +53,6 @@ int main(int argc,char **argv){
         ast_free(program);
         return ferror(stdout) ? EXIT_FAILURE : EXIT_SUCCESS;
     }
-
-    char default_asm[512];char default_out[512];
-    if(!output){snprintf(default_out,sizeof(default_out),"a.out");output=default_out;}
-    snprintf(default_asm,sizeof(default_asm),"%s.carsoncc.%s",output,windows_target?"asm":"s");
-    const char *asm_path=assembly_only?output:default_asm;
-    size_t size=0;char *source=read_file(input,&size);(void)size;if(!source)return EXIT_FAILURE;
-    Parser parser;parser_init(&parser,source);AstNode *program=parser_parse(&parser);free(source);
-    if(!program){fprintf(stderr,"CarsonCC: compilation failed during parsing\n");return EXIT_FAILURE;}
-    if(!semantic_check(program)){ast_free(program);fprintf(stderr,"CarsonCC: compilation failed during semantic analysis\n");return EXIT_FAILURE;}
 
     int generated = windows_target ? codegen_windows_x86_64(program,asm_path) : codegen_x86_64(program,asm_path);
     ast_free(program);
