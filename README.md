@@ -33,6 +33,20 @@ On a Windows machine with MSVC and MASM installed, CarsonCC can also build the W
 carsoncc examples\hello.car -target windows -o hello.exe
 ```
 
+## 🪟 Windows portable install
+
+The Windows release includes both a conventional per-user Setup EXE and a portable ZIP. To make a separate portable folder without administrator rights:
+
+1. Download and extract the **Windows x86-64 ZIP** from [GitHub Releases](https://github.com/carjam120443-netizen/Carsoncc/releases).
+2. Open PowerShell in the extracted folder.
+3. Run:
+
+   ```powershell
+   powershell -NoProfile -ExecutionPolicy Bypass -File .\\Install-CarsonCC.ps1
+   ```
+
+By default, this creates a `CarsonCC-Portable` folder beside the script. Choose another destination with `-InstallDir "D:\\Tools\\CarsonCC"`. The script copies the compiler, examples, and documentation; it does not require administrator rights or modify PATH. You can move the resulting folder or keep it on removable storage. You can also skip the script and run `carsoncc.exe` directly from the extracted ZIP.
+
 ## 📱 CarsonCC Mobile
 
 CarsonCC now includes a native Android companion app under `mobile/`.
@@ -130,7 +144,8 @@ The release workflow currently produces:
 
 - 🐧 Linux x86-64 `.tar.gz`
 - 🟠 Ubuntu/Debian x86-64 `.deb`
-- 🪟 Windows x86-64 `.zip`
+- 🪟 Windows x86-64 portable `.zip` (includes `Install-CarsonCC.ps1`)
+- 🪟 Windows per-user Setup `.exe`
 - 🤖 Android release `.apk`
 - 📦 Source `.tar.gz`
 
@@ -171,9 +186,10 @@ The release workflow automatically:
 4. Creates a Linux x86-64 archive.
 5. Builds the Windows compiler with MSVC.
 6. Creates a Windows x86-64 ZIP package.
-7. Builds the Android release APK.
-8. Creates a source archive.
-9. Publishes a GitHub Release containing the generated files.
+7. Builds the no-admin Windows Setup EXE and portable ZIP with `Install-CarsonCC.ps1`.
+8. Builds the Android release APK.
+9. Creates a source archive.
+10. Publishes a GitHub Release containing the generated files.
 
 Main-branch pushes also use an automatic `0.1.<run>` version so package builds can be published without manually creating a tag.
 
