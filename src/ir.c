@@ -130,7 +130,7 @@ int ir_verify(const IRProgram *p,FILE *diag) {
     for(i=0;i<p->function_count;i++) {
         const IRFunction *f=&p->functions[i]; size_t count=(size_t)f->next_value;
         unsigned char *defs; int has_return=0;
-        if(!f->name || f->parameter_count>f->slot_count) { if(diag)fprintf(diag,"CarsonCC IR: invalid function metadata\n"); return 0; }
+        if(!f->name || f->next_value<0 || f->parameter_count>f->slot_count || (f->slot_count && !f->slot_names) || (f->instruction_count && !f->instructions)) { if(diag)fprintf(diag,"CarsonCC IR: invalid function metadata\n"); return 0; }
         defs=count?(unsigned char *)calloc(count,1):NULL;
         if(count && !defs) return 0;
         for(j=0;j<f->instruction_count;j++) {
@@ -142,7 +142,7 @@ int ir_verify(const IRProgram *p,FILE *diag) {
                 free(defs); return 0;
             }
             if(in->op==IR_CALL) {
-                if(!in->callee) { free(defs); return 0; }
+                if(!in->callee || (in->argument_count && !in->arguments)) { if(diag)fprintf(diag,"CarsonCC IR: invalid call metadata in %s\n",f->name); free(defs); return 0; }
                 for(k=0;k<in->argument_count;k++) if(!defined_value(defs,count,in->arguments[k])) {
                     if(diag)fprintf(diag,"CarsonCC IR: invalid call argument in %s\n",f->name);
                     free(defs); return 0;
