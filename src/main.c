@@ -64,7 +64,7 @@ int main(int argc,char **argv){
     if(windows_target){
         char obj_path[512];
         snprintf(obj_path,sizeof(obj_path),"%s.carsoncc.obj",output);
-        snprintf(command,sizeof(command),"ml64 /nologo /c /Fo\"%s\" \"%s\" && link.exe /nologo /MACHINE:X64 /SUBSYSTEM:CONSOLE /ENTRY:main /OUT:\"%s\" \"%s\"",obj_path,asm_path,output,obj_path);
+        snprintf(command,sizeof(command),"ml64 /nologo /c /Fo\"%s\" \"%s\" && link.exe /nologo /MACHINE:X64 /SUBSYSTEM:CONSOLE /ENTRY:carsoncc_entry /OUT:\"%s\" \"%s\"",obj_path,asm_path,output,obj_path);
         rc=system(command);
         remove(obj_path);
         if(rc==0){
