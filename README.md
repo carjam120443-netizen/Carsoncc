@@ -77,7 +77,7 @@ Carson source (.car)
  Native executable
 ```
 
-The IR layer is the next major compiler architecture step.
+The frontend now lowers the currently supported language subset into a verified, printable Carson IR. Existing host and Windows backends still use the AST, so the IR rollout does not change their output path yet.
 
 ## 🟢 Current Features
 
@@ -94,7 +94,8 @@ The IR layer is the next major compiler architecture step.
 - 🏗️ System V x86-64 Intel-syntax backend
 - 🪟 Native Windows x64 MASM backend using the Windows register calling convention
 - 🔗 Native executable generation through the host toolchain
-- 🧪 Automated end-to-end tests
+- 🧪 Automated end-to-end tests and IR smoke tests
+- 🧱 Three-address Carson IR with AST lowering, local slots, temporary values, a verifier, and `--dump-ir`
 - 🤖 Always-on GitHub Actions automation
 - 📱 Android companion/background bridge
 - 📦 Automatic release packages from `v*` tags and main-branch builds
@@ -222,11 +223,12 @@ Carsoncc/
 ## 🛠️ Command Line
 
 ```text
-carsoncc <input.car> [-o output] [-S] [-target TARGET]
+carsoncc <input.car> [-o output] [-S] [-target TARGET] [--dump-ir]
 ```
 
 - `-S` — generate assembly and stop before linking.
 - `-o FILE` — choose the output executable or assembly filename.
+- `--dump-ir` — lower to Carson IR, verify it, print the IR, and exit without generating assembly.
 - `-target host` — use the System V x86-64 backend (default).
 - `-target windows` or `-target win64` — use the native Windows x64 MASM backend.
 
@@ -276,11 +278,12 @@ The minimally breaking plan for a real Carson IR, direct object/executable gener
 - [ ] Better diagnostics
 
 ### Phase 3 — Real IR ⚙️
-- [ ] Three-address Carson IR
+- [x] Three-address Carson IR for the current language subset
+- [x] AST → IR lowering
+- [x] IR verifier
+- [x] Human-readable `--dump-ir` output
 - [ ] Basic blocks
 - [ ] Control-flow graph
-- [ ] AST → IR lowering
-- [ ] IR verifier
 - [ ] Constant folding
 - [ ] Dead-code elimination
 
