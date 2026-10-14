@@ -248,6 +248,10 @@ The Android companion is built with Gradle 8.9 and Android Gradle Plugin 8.7.3:
 gradle -p mobile assembleRelease
 ```
 
+## 🧭 Compiler Independence
+
+The minimally breaking plan for a real Carson IR, direct object/executable generation, target-specific toolchains, and eventual self-hosting is documented in [docs/COMPILER_INDEPENDENCE.md](docs/COMPILER_INDEPENDENCE.md). This is a roadmap, not a claim that these future capabilities are already implemented.
+
 ## 🗺️ Roadmap
 
 ### Phase 1 — Working Frontend ✅
