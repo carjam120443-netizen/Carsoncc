@@ -229,6 +229,7 @@ carsoncc <input.car> [-o output] [-S] [-target TARGET] [--dump-ir]
 - `-S` — generate assembly and stop before linking.
 - `-o FILE` — choose the output executable or assembly filename.
 - `--dump-ir` — lower to Carson IR, verify it, print the IR, and exit without generating assembly.
+- `examples/ir_demo.car` — small sample exercising parameters, a function call, local variables, and arithmetic; its compiled `main` returns 42.
 - `-target host` — use the System V x86-64 backend (default).
 - `-target windows` or `-target win64` — use the native Windows x64 MASM backend.
 
