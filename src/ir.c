@@ -95,7 +95,7 @@ static int lower_expr(Lower *c,const AstNode *n) {
     }
 }
 static int lower_function(const AstNode *ast,IRFunction *f) {
-    size_t i; Lower c;
+    size_t i; Lower c; int v;
     memset(f,0,sizeof(*f)); f->name=copy_string(ast->name); f->parameter_count=ast->parameter_count;
     if(!f->name) return 0;
     for(i=0;i<ast->parameter_count;i++) if(!add_slot(f,ast->parameters[i])) return 0;
@@ -105,7 +105,7 @@ static int lower_function(const AstNode *ast,IRFunction *f) {
     }
     c.f=f; c.failed=0;
     for(i=0;i<ast->child_count;i++) {
-        const AstNode *s=ast->children[i]; int v;
+        const AstNode *s=ast->children[i];
         if(s->kind==AST_LET) {
             v=lower_expr(&c,s->left);
             if(v<0 || !emit_effect(&c,IR_STORE,s->line,v,(size_t)slot_of(f,s->name))) return 0;
@@ -191,4 +191,35 @@ void ir_dump(const IRProgram *p,FILE *out) {
         }
         fprintf(out,"}\n");
     }
+}
+
+
+int ir_lower(const AstNode *ast, IRProgram *out) {
+    size_t i;
+    if (!out) return 0;
+    memset(out, 0, sizeof(*out));
+    if (!ast || ast->kind != AST_PROGRAM || !ast->child_count) {
+        fprintf(stderr, "CarsonCC IR: expected a non-empty program AST\\n");
+        return 0;
+    }
+    out->functions = (IRFunction *)calloc(ast->child_count, sizeof(*out->functions));
+    if (!out->functions) {
+        fprintf(stderr, "CarsonCC IR: out of memory\\n");
+        return 0;
+    }
+    out->function_count = ast->child_count;
+    for (i = 0; i < ast->child_count; ++i) {
+        if (!ast->children[i] || ast->children[i]->kind != AST_FUNCTION ||
+            !lower_function(ast->children[i], &out->functions[i])) {
+            fprintf(stderr, "CarsonCC IR: failed to lower function %lu\\n", (unsigned long)i);
+            ir_free(out);
+            return 0;
+        }
+    }
+    if (!ir_verify(out, stderr)) {
+        fprintf(stderr, "CarsonCC IR: verification failed\\n");
+        ir_free(out);
+        return 0;
+    }
+    return 1;
 }
