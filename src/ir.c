@@ -59,7 +59,7 @@ static int emit_effect(Lower *c,IROp op,size_t line,int a,size_t slot) {
 static int lower_expr(Lower *c,const AstNode *n);
 static int lower_call(Lower *c,const AstNode *n) {
     IRInstruction in; size_t i;
-    memset(&in,0,sizeof(in)); in.op=IR_CALL; in.line=n->line; in.result=c->f->next_value++; in.a=in.b=-1;
+    memset(&in,0,sizeof(in)); in.op=IR_CALL; in.line=n->line; in.result=-1; in.a=in.b=-1;
     in.callee=copy_string(n->name); in.argument_count=n->child_count;
     if (!in.callee) goto fail;
     if (in.argument_count) {
@@ -70,6 +70,7 @@ static int lower_call(Lower *c,const AstNode *n) {
             if(in.arguments[i]<0 || c->failed) goto fail;
         }
     }
+    in.result=c->f->next_value++;
     if(!append(c->f,in)) goto fail;
     return in.result;
 fail:
