@@ -122,6 +122,16 @@ jobs:
         run: |
           carsoncc.exe examples\\hello.car -target windows -S -o hello-check.asm
           findstr /C:"main PROC" hello-check.asm
+      - name: Test portable Windows installer script
+        shell: powershell
+        run: |
+          $destination = Join-Path $env:RUNNER_TEMP "CarsonCC-Portable-Test"
+          if (Test-Path -LiteralPath $destination) { Remove-Item -LiteralPath $destination -Recurse -Force }
+          & .\\installer\\Install-CarsonCC.ps1 -InstallDir $destination
+          if ($LASTEXITCODE -ne 0) { throw "Portable installer script failed with exit code $LASTEXITCODE" }
+          if (!(Test-Path -LiteralPath (Join-Path $destination "carsoncc.exe"))) { throw "Portable installer did not copy carsoncc.exe" }
+          if (!(Test-Path -LiteralPath (Join-Path $destination "examples\\hello.car"))) { throw "Portable installer did not copy examples" }
+          Write-Host "Portable install verified at $destination"
       - name: Upload Windows compiler and GUI
         uses: actions/upload-artifact@v4
         with:
