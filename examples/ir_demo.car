@@ -1,0 +1,14 @@
+// Carson IR demo: function calls, parameters, locals, and arithmetic.
+// Build CarsonCC, then run:
+//   ./carsoncc examples/ir_demo.car --dump-ir
+// The compiled program returns 42.
+
+fn double(value) {
+    return value * 2;
+}
+
+fn main() {
+    let base = 21;
+    let answer = double(base);
+    return answer;
+}

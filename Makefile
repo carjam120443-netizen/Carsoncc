@@ -13,5 +13,14 @@ src/%.o: src/%.c
 test: $(TARGET)
 	./$(TARGET) examples/hello.car -o hello
 	./hello; status=$$?; rm -f hello; test "$$status" -eq 50
+	./$(TARGET) examples/ir_demo.car -o ir_demo
+	./ir_demo; status=$$?; rm -f ir_demo; test "$$status" -eq 42
+	./$(TARGET) examples/ir_demo.car --dump-ir > .carson-ir-test.txt
+	grep -q "Carson IR v1" .carson-ir-test.txt
+	grep -q "mul" .carson-ir-test.txt
+	grep -q "call double" .carson-ir-test.txt
+	grep -q "store" .carson-ir-test.txt
+	grep -q "return" .carson-ir-test.txt
+	rm -f .carson-ir-test.txt
 clean:
-	rm -f $(OBJECTS) $(TARGET) *.carsoncc.s
+	rm -f $(OBJECTS) $(TARGET) hello ir_demo .carson-ir-test.txt *.carsoncc.s

@@ -33,6 +33,20 @@ On a Windows machine with MSVC and MASM installed, CarsonCC can also build the W
 carsoncc examples\hello.car -target windows -o hello.exe
 ```
 
+## 🪟 Windows portable install
+
+The Windows release includes both a conventional per-user Setup EXE and a portable ZIP. To make a separate portable folder without administrator rights:
+
+1. Download and extract the **Windows x86-64 ZIP** from [GitHub Releases](https://github.com/carjam120443-netizen/Carsoncc/releases).
+2. Open PowerShell in the extracted folder.
+3. Run:
+
+   ```powershell
+   powershell -NoProfile -ExecutionPolicy Bypass -File .\Install-CarsonCC.ps1
+   ```
+
+By default, this creates a `CarsonCC-Portable` folder beside the script. Choose another destination with `-InstallDir "D:\Tools\CarsonCC"`. The script copies the compiler, examples, and documentation; it does not require administrator rights or modify PATH. You can move the resulting folder or keep it on removable storage. You can also skip the script and run `carsoncc.exe` directly from the extracted ZIP.
+
 ## 📱 CarsonCC Mobile
 
 CarsonCC now includes a native Android companion app under `mobile/`.
@@ -77,7 +91,7 @@ Carson source (.car)
  Native executable
 ```
 
-The IR layer is the next major compiler architecture step.
+The frontend now lowers the currently supported language subset into a verified, printable Carson IR. Existing host and Windows backends still use the AST, so the IR rollout does not change their output path yet.
 
 ## 🟢 Current Features
 
@@ -94,7 +108,8 @@ The IR layer is the next major compiler architecture step.
 - 🏗️ System V x86-64 Intel-syntax backend
 - 🪟 Native Windows x64 MASM backend using the Windows register calling convention
 - 🔗 Native executable generation through the host toolchain
-- 🧪 Automated end-to-end tests
+- 🧪 Automated end-to-end tests and IR smoke tests
+- 🧱 Three-address Carson IR with AST lowering, local slots, temporary values, a verifier, and `--dump-ir`
 - 🤖 Always-on GitHub Actions automation
 - 📱 Android companion/background bridge
 - 📦 Automatic release packages from `v*` tags and main-branch builds
@@ -129,7 +144,8 @@ The release workflow currently produces:
 
 - 🐧 Linux x86-64 `.tar.gz`
 - 🟠 Ubuntu/Debian x86-64 `.deb`
-- 🪟 Windows x86-64 `.zip`
+- 🪟 Windows x86-64 portable `.zip` (includes `Install-CarsonCC.ps1`)
+- 🪟 Windows per-user Setup `.exe`
 - 🤖 Android release `.apk`
 - 📦 Source `.tar.gz`
 
@@ -170,9 +186,10 @@ The release workflow automatically:
 4. Creates a Linux x86-64 archive.
 5. Builds the Windows compiler with MSVC.
 6. Creates a Windows x86-64 ZIP package.
-7. Builds the Android release APK.
-8. Creates a source archive.
-9. Publishes a GitHub Release containing the generated files.
+7. Builds the no-admin Windows Setup EXE and portable ZIP with `Install-CarsonCC.ps1`.
+8. Builds the Android release APK.
+9. Creates a source archive.
+10. Publishes a GitHub Release containing the generated files.
 
 Main-branch pushes also use an automatic `0.1.<run>` version so package builds can be published without manually creating a tag.
 
@@ -222,11 +239,13 @@ Carsoncc/
 ## 🛠️ Command Line
 
 ```text
-carsoncc <input.car> [-o output] [-S] [-target TARGET]
+carsoncc <input.car> [-o output] [-S] [-target TARGET] [--dump-ir]
 ```
 
 - `-S` — generate assembly and stop before linking.
 - `-o FILE` — choose the output executable or assembly filename.
+- `--dump-ir` — lower to Carson IR, verify it, print the IR, and exit without generating assembly.
+- `examples/ir_demo.car` — small sample exercising parameters, a function call, local variables, and arithmetic; its compiled `main` returns 42.
 - `-target host` — use the System V x86-64 backend (default).
 - `-target windows` or `-target win64` — use the native Windows x64 MASM backend.
 
@@ -247,6 +266,10 @@ The Android companion is built with Gradle 8.9 and Android Gradle Plugin 8.7.3:
 ```bash
 gradle -p mobile assembleRelease
 ```
+
+## 🧭 Compiler Independence
+
+The minimally breaking plan for a real Carson IR, direct object/executable generation, target-specific toolchains, and eventual self-hosting is documented in [docs/COMPILER_INDEPENDENCE.md](docs/COMPILER_INDEPENDENCE.md). This is a roadmap, not a claim that these future capabilities are already implemented.
 
 ## 🗺️ Roadmap
 
@@ -272,11 +295,12 @@ gradle -p mobile assembleRelease
 - [ ] Better diagnostics
 
 ### Phase 3 — Real IR ⚙️
-- [ ] Three-address Carson IR
+- [x] Three-address Carson IR for the current language subset
+- [x] AST → IR lowering
+- [x] IR verifier
+- [x] Human-readable `--dump-ir` output
 - [ ] Basic blocks
 - [ ] Control-flow graph
-- [ ] AST → IR lowering
-- [ ] IR verifier
 - [ ] Constant folding
 - [ ] Dead-code elimination
 
