@@ -53,6 +53,16 @@ jobs:
       - name: Build compiler
         shell: cmd
         run: cl /nologo /std:c11 /W4 /I src src\\ast.c src\\codegen.c src\\codegen_windows.c src\\ir.c src\\lexer.c src\\main.c src\\parser.c src\\semantic_full.c /Fe:carsoncc.exe
+      - name: Test portable Windows installer script
+        shell: powershell
+        run: |
+          $destination = Join-Path $env:RUNNER_TEMP "CarsonCC-Portable-Test"
+          if (Test-Path -LiteralPath $destination) { Remove-Item -LiteralPath $destination -Recurse -Force }
+          & .\\installer\\Install-CarsonCC.ps1 -InstallDir $destination
+          if ($LASTEXITCODE -ne 0) { throw "Portable installer script failed with exit code $LASTEXITCODE" }
+          if (!(Test-Path -LiteralPath (Join-Path $destination "carsoncc.exe"))) { throw "Portable installer did not copy carsoncc.exe" }
+          if (!(Test-Path -LiteralPath (Join-Path $destination "examples\\hello.car"))) { throw "Portable installer did not copy examples" }
+          Write-Host "Portable install verified at $destination"
       - name: Build Windows GUI
         shell: cmd
         run: cl /nologo /std:c11 /W4 /O2 gui\\main.c user32.lib comdlg32.lib gdi32.lib /link /SUBSYSTEM:WINDOWS /OUT:CarsonCC.exe
@@ -69,25 +79,54 @@ jobs:
         run: |
           where ml64
           where link
-      - name: Build a Carson program with native Windows backend
+      - name: Emit Windows assembly for hello.car
+        timeout-minutes: 1
         shell: cmd
         run: |
+          echo [1/4] Running CarsonCC assembly generation
           carsoncc.exe examples\\hello.car -target windows -S -o hello.asm
+          if errorlevel 1 exit /b 1
           if not exist hello.asm exit /b 1
+      - name: Assemble Windows hello program
+        timeout-minutes: 1
+        shell: cmd
+        run: |
+          echo [2/4] Running MASM
           ml64.exe /nologo /c /Fohello.obj hello.asm
           if errorlevel 1 exit /b 1
-          link.exe /nologo /MACHINE:X64 /SUBSYSTEM:CONSOLE /ENTRY:main /OUT:hello.exe hello.obj
-          if errorlevel 1 exit /b 1
-          .\\hello.exe
-          if not "%ERRORLEVEL%"=="50" exit /b 1
-          exit /b 0
-      - name: Test compiler Windows linking path
+          if not exist hello.obj exit /b 1
+      - name: Link Windows hello program
+        timeout-minutes: 1
         shell: cmd
         run: |
-          carsoncc.exe examples\\hello.car -target windows -o hello-linked.exe
-          if not exist hello-linked.exe exit /b 1
-          .\\hello-linked.exe
-          if not "%ERRORLEVEL%"=="50" exit /b 1
+          echo [3/4] Running Microsoft linker
+          link.exe /nologo /MACHINE:X64 /SUBSYSTEM:CONSOLE /ENTRY:carsoncc_entry /OUT:hello.exe hello.obj kernel32.lib
+          if errorlevel 1 exit /b 1
+          if not exist hello.exe exit /b 1
+      - name: Run native Windows hello program
+        timeout-minutes: 1
+        shell: powershell
+        run: |
+          Write-Host "[4/4] Running hello.exe (expected exit code 50)"
+          $p = Start-Process -FilePath ".\\hello.exe" -PassThru
+          if (-not $p.WaitForExit(10000)) {
+            $p.Kill()
+            throw "hello.exe timed out after 10 seconds"
+          }
+          Write-Host "hello.exe exit code: $($p.ExitCode)"
+          if ($p.ExitCode -ne 50) { throw "Expected exit code 50, got $($p.ExitCode)" }
+      - name: Test compiler Windows linking path
+        timeout-minutes: 1
+        shell: powershell
+        run: |
+          Write-Host "Running CarsonCC Windows linking path"
+          & .\\carsoncc.exe examples\\hello.car -target windows -o hello-linked.exe
+          if ($LASTEXITCODE -ne 0) { throw "CarsonCC linker path failed with exit code $LASTEXITCODE" }
+          if (!(Test-Path .\\hello-linked.exe)) { throw "hello-linked.exe was not created" }
+          $p = Start-Process -FilePath ".\\hello-linked.exe" -PassThru
+          if (-not $p.WaitForExit(10000)) { $p.Kill(); throw "hello-linked.exe timed out after 10 seconds" }
+          Write-Host "hello-linked.exe exit code: $($p.ExitCode)"
+          if ($p.ExitCode -ne 50) { throw "Expected exit code 50, got $($p.ExitCode)" }
       - name: Test Windows assembly output
         shell: cmd
         run: |

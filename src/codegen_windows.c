@@ -101,13 +101,14 @@ static int function_codegen(FILE *out, const AstNode *f) {
 int codegen_windows_x86_64(const AstNode *program, const char *output_path) {
     FILE *out = fopen(output_path, "w");
     if (!out) { perror(output_path); return 0; }
-    fprintf(out, ".code\n");
+    fprintf(out, "EXTERN ExitProcess:PROC\n.code\n");
     for (size_t i = 0; i < program->child_count; ++i) {
         if (!function_codegen(out, program->children[i])) {
             fclose(out);
             return 0;
         }
     }
+    fprintf(out, "PUBLIC carsoncc_entry\ncarsoncc_entry PROC\n    and rsp, -16\n    sub rsp, 32\n    call main\n    mov ecx, eax\n    call ExitProcess\ncarsoncc_entry ENDP\n");
     fprintf(out, "END\n");
     fclose(out);
     return 1;

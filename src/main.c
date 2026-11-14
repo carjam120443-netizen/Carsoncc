@@ -4,6 +4,7 @@
 #include "parser.h"
 #include "semantic.h"
 #include "codegen.h"
+#include "ir.h"
 
 static char *read_file(const char *path, size_t *size_out) {
     FILE *f=fopen(path,"rb"); if(!f){perror(path);return NULL;}
@@ -13,17 +14,19 @@ static char *read_file(const char *path, size_t *size_out) {
 }
 
 static void usage(void){
-    fprintf(stderr,"usage: carsoncc <input.car> [-o output] [-S] [-target TARGET]\n"
+    fprintf(stderr,"usage: carsoncc <input.car> [-o output] [-S] [-target TARGET] [--dump-ir]\n"
                    "  -S             emit assembly instead of linking\n"
                    "  -o FILE        output executable or assembly file\n"
-                   "  -target TARGET target backend: host or windows\n");
+                   "  -target TARGET target backend: host or windows\n"
+                   "  --dump-ir      lower, verify, print Carson IR, and exit\n");
 }
 
 int main(int argc,char **argv){
     if(argc<2){usage();return EXIT_FAILURE;}
-    const char *input=NULL,*output=NULL,*target="host";int assembly_only=0;
+    const char *input=NULL,*output=NULL,*target="host";int assembly_only=0,dump_ir=0;
     for(int i=1;i<argc;i++){
         if(strcmp(argv[i],"-S")==0) assembly_only=1;
+        else if(strcmp(argv[i],"--dump-ir")==0) dump_ir=1;
         else if(strcmp(argv[i],"-o")==0){if(++i>=argc){usage();return EXIT_FAILURE;}output=argv[i];}
         else if(strcmp(argv[i],"-target")==0){if(++i>=argc){usage();return EXIT_FAILURE;}target=argv[i];}
         else if(argv[i][0]=='-'){fprintf(stderr,"CarsonCC: unknown option '%s'\n",argv[i]);return EXIT_FAILURE;}
@@ -41,6 +44,15 @@ int main(int argc,char **argv){
     Parser parser;parser_init(&parser,source);AstNode *program=parser_parse(&parser);free(source);
     if(!program){fprintf(stderr,"CarsonCC: compilation failed during parsing\n");return EXIT_FAILURE;}
     if(!semantic_check(program)){ast_free(program);fprintf(stderr,"CarsonCC: compilation failed during semantic analysis\n");return EXIT_FAILURE;}
+    if(dump_ir){
+        IRProgram ir;
+        int lowered=ir_lower(program,&ir);
+        if(!lowered){ast_free(program);fprintf(stderr,"CarsonCC: compilation failed during IR lowering or verification\n");return EXIT_FAILURE;}
+        ir_dump(&ir,stdout);
+        ir_free(&ir);
+        ast_free(program);
+        return ferror(stdout) ? EXIT_FAILURE : EXIT_SUCCESS;
+    }
 
     int generated = windows_target ? codegen_windows_x86_64(program,asm_path) : codegen_x86_64(program,asm_path);
     ast_free(program);
@@ -52,7 +64,7 @@ int main(int argc,char **argv){
     if(windows_target){
         char obj_path[512];
         snprintf(obj_path,sizeof(obj_path),"%s.carsoncc.obj",output);
-        snprintf(command,sizeof(command),"ml64 /nologo /c /Fo\"%s\" \"%s\" && link.exe /nologo /MACHINE:X64 /SUBSYSTEM:CONSOLE /ENTRY:main /OUT:\"%s\" \"%s\"",obj_path,asm_path,output,obj_path);
+        snprintf(command,sizeof(command),"ml64 /nologo /c /Fo\"%s\" \"%s\" && link.exe /nologo /MACHINE:X64 /SUBSYSTEM:CONSOLE /ENTRY:carsoncc_entry /OUT:\"%s\" \"%s\" kernel32.lib",obj_path,asm_path,output,obj_path);
         rc=system(command);
         remove(obj_path);
         if(rc==0){
