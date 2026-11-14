@@ -12,6 +12,7 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import androidx.activity.ComponentActivity;
+import androidx.core.content.ContextCompat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -121,8 +122,7 @@ public class MainActivity extends ComponentActivity {
     @Override protected void onStart() {
         super.onStart();
         IntentFilter filter = new IntentFilter(ACTION_LOG);
-        if (Build.VERSION.SDK_INT >= 33) registerReceiver(logReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
-        else registerReceiver(logReceiver, filter);
+        ContextCompat.registerReceiver(this, logReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
         appendLog("Console connected to service events");
     }
 
