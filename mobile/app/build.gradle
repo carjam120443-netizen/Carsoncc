@@ -37,4 +37,5 @@ android {
 dependencies {
     // AndroidX is intentionally used by the app, not just enabled in Gradle.
     implementation 'androidx.activity:activity:1.10.1'
+    implementation 'androidx.core:core:1.15.0'
 }
