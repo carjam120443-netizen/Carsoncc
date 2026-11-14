@@ -30,12 +30,12 @@ Generate native Windows x64 MASM assembly from any host:
 On a Windows machine with MSVC and MASM installed, CarsonCC can also build the Windows executable directly:
 
 ```text
-carsoncc examples\hello.car -target windows -o hello.exe
+carsoncc examples\\hello.car -target windows -o hello.exe
 ```
 
 ## 📱 CarsonCC Mobile
 
-CarsonCC now includes a native Android companion app under `mobile/`.
+CarsonCC includes a native Android companion app under `mobile/`.
 
 **CarsonCC Mobile** is designed as a lightweight background bridge for terminal applications and future Android/system integrations. It deliberately avoids constant polling and wake locks. When the user starts the service, it keeps a small localhost listener on `127.0.0.1:3939` and responds to simple commands:
 
@@ -50,7 +50,7 @@ A terminal app can connect locally, for example with a TCP client such as `nc`, 
 
 The Android app does **not** grant itself privileged Android/system access. Future CarsonCC Mobile work can add narrowly scoped integrations as Android APIs and permissions allow.
 
-GitHub releases automatically build an unsigned release APK alongside the Linux, Windows, and source packages. The APK is intended for sideloading/testing while the mobile layer is developed.
+GitHub releases automatically build a debug-signed release APK alongside the Linux, Windows, and source packages. The APK is intended for sideloading/testing while the mobile layer is developed. Production distribution should use a private release key.
 
 ## 🧠 Compiler Pipeline
 
@@ -77,11 +77,11 @@ Carson source (.car)
  Native executable
 ```
 
-The IR layer is the next major compiler architecture step.
+A real intermediate representation (IR) is planned as a future compiler architecture step. The current source tree does not include a placeholder IR implementation.
 
 ## 🟢 Current Features
 
-- 🔤 Lexer with keywords, identifiers, integers, strings, operators, punctuation, and `//` comments
+- 🔤 Lexer recognizes keywords, identifiers, integers, string-literal tokens, operators, punctuation, and `//` comments
 - 🌳 AST construction
 - 🧩 Recursive-descent parser
 - ➕ `+`, `-`, `*`, `/` precedence
@@ -98,6 +98,8 @@ The IR layer is the next major compiler architecture step.
 - 🤖 Always-on GitHub Actions automation
 - 📱 Android companion/background bridge
 - 📦 Automatic release packages from `v*` tags and main-branch builds
+
+**Language support note:** the lexer recognizes string literals and the `int` keyword, but the parser does not yet accept string expressions or typed declarations. String runtime support and typed declarations remain planned features.
 
 ## 📝 Carson Syntax
 
@@ -147,7 +149,7 @@ Workflows live under `.github/workflows/`.
 - a daily scheduled build
 - manual `workflow_dispatch`
 
-It builds CarsonCC on both Ubuntu and Windows. The Windows job actually invokes the native Windows backend, builds `hello.exe`, and verifies its exit status. The Linux job also verifies that Windows MASM assembly can be emitted.
+It builds CarsonCC on both Ubuntu and Windows. The Windows job invokes the native Windows backend, builds `hello.exe`, and verifies its exit status. The Linux job also verifies that Windows MASM assembly can be emitted.
 
 ### CI
 
@@ -203,9 +205,8 @@ Carsoncc/
 │   ├── lexer.c/.h
 │   ├── parser.c/.h
 │   ├── ast.c/.h
-│   ├── semantic.c/.h
-│   ├── semantic_full.c  # complete function/call validation
-│   ├── ir.c/.h
+│   ├── semantic.h
+│   ├── semantic_full.c  # function and call validation
 │   ├── codegen.c/.h
 │   └── codegen_windows.c # native Windows x64 MASM backend
 ├── examples/
@@ -269,6 +270,7 @@ gradle -p mobile assembleRelease
 - [ ] `if` / `else`
 - [ ] `while` / `for`
 - [ ] Strings and runtime support
+- [ ] Typed declarations
 - [ ] Better diagnostics
 
 ### Phase 3 — Real IR ⚙️
